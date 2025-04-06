@@ -165,15 +165,13 @@ def mark_not_a_bird(filename):
 
 @app.route("/snap")
 def snap():
-    filename = f"visit_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
-    filepath = os.path.join(VISITS_DIR, filename)
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    filename = f"visit_{timestamp}.jpg"
+    filepath = os.path.join("visits", filename)
 
-    picam2 = Picamera2()
-    config = picam2.create_still_configuration()
-    picam2.configure(config)
-    picam2.start()
-    picam2.capture_file(filepath)
-    picam2.stop()
+    result = os.system(f"libcamera-still -n --width 640 --height 480 -o {filepath}")
+    if result != 0 or not os.path.exists(filepath):
+        return "❌ Failed to capture image", 500
 
     with open(LOG_CSV, "a", newline="") as f:
         writer = csv.writer(f)
@@ -182,6 +180,7 @@ def snap():
         writer.writerow([filename, "Manual Snapshot", datetime.now().strftime("%Y-%m-%d %H:%M:%S")])
 
     return redirect(url_for("index"))
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
