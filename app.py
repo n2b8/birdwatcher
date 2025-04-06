@@ -123,18 +123,30 @@ def mark_good(filename):
     if os.path.exists(review_path):
         os.rename(review_path, final_path)
 
-    with open(REVIEW_CSV, "r") as f:
-        lines = list(csv.DictReader(f))
-    with open(REVIEW_CSV, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=["filename", "species", "timestamp"])
-        writer.writeheader()
-        for row in lines:
-            if row["filename"] != filename:
-                writer.writerow(row)
+    if os.path.exists(REVIEW_CSV):
+        with open(REVIEW_CSV, "r") as f:
+            lines = list(csv.DictReader(f))
 
-    with open(LOG_CSV, "a", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow([filename, "Manual Tag", datetime.now().strftime("%Y-%m-%d %H:%M:%S")])
+        # Write back review_log.csv without the marked file
+        with open(REVIEW_CSV, "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=["filename", "species", "confidence", "timestamp"])
+            writer.writeheader()
+            for row in lines:
+                if row["filename"] != filename:
+                    writer.writerow(row)
+                else:
+                    # Append this row to log.csv
+                    log_row = {
+                        "filename": row["filename"],
+                        "species": row["species"],
+                        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    }
+                    write_header = not os.path.exists(LOG_CSV) or os.stat(LOG_CSV).st_size == 0
+                    with open(LOG_CSV, "a", newline="") as f_log:
+                        log_writer = csv.DictWriter(f_log, fieldnames=["filename", "species", "timestamp"])
+                        if write_header:
+                            log_writer.writeheader()
+                        log_writer.writerow(log_row)
 
     return redirect(url_for("review"))
 
