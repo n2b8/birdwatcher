@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Bird Feeder Log</title>
+  <style>
+    body { font-family: sans-serif; padding: 2em; background: #f0f0f0; }
+    .visit { background: white; padding: 1em; margin-bottom: 1em; border-radius: 8px; }
+    .visit img { max-width: 200px; cursor: pointer; border: 1px solid #ccc; }
+    .visit time { font-size: 0.9em; color: #666; }
+    .full-image { max-width: 90vw; max-height: 90vh; }
+  </style>
+</head>
+<body>
+  <h1>Bird Feeder Visits</h1>
+  <p><a href="/snap">📸 Snap Test Photo</a></p>
+  {% for entry in entries %}
+  <div class="visit">
+    <strong>{{ entry.species }}</strong><br>
+    <time>{{ entry.timestamp }}</time><br>
+    <a href="{{ url_for('serve_image', filename=entry.filename) }}" target="_blank">
+      <img src="{{ url_for('serve_image', filename=entry.filename) }}" alt="{{ entry.species }}">
+    </a><br>
+    <form action="{{ url_for('delete', filename=entry.filename) }}" method="POST" style="display:inline;">
+      <button type="submit">🗑️ Delete</button>
+    </form>
+  </div>
+  {% endfor %}
+</body>
+</html>

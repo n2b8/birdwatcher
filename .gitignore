@@ -1,0 +1,18 @@
+# Ignore all JPG visit images
+visits/*.jpg
+static/visits/*.jpg
+debug_*.jpg
+
+# Python cache
+*.pyc
+__pycache__/
+
+# Local virtual environment (if it exists)
+birdenv/
+
+# Editor configs
+.vscode/
+.idea/
+
+# macOS system file
+.DS_Store
