@@ -4,6 +4,7 @@ import numpy as np
 import datetime
 import os
 import sys
+from send_telegram import send_telegram_message
 
 # Settings
 CONFIDENCE_THRESHOLD = 2.0  # Minimum probability to consider a valid bird
@@ -47,11 +48,14 @@ def capture_and_classify(image_path=None):
         species = class_labels[prediction]
         print(f"[{timestamp}] ✅ Detected: {species} ({confidence:.2f})")
 
-        # Write to log.csv (matching the expected column order)
+        # Write to log
         with open(LOG_FILE, "a", newline="") as log:
             if os.stat(LOG_FILE).st_size == 0:
                 log.write("filename,species,timestamp\n")
             log.write(f"{os.path.basename(image_path)},{species},{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+
+        # Send Telegram notification
+        send_telegram_message(species, image_path)
 
         return True
     else:
