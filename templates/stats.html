@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Bird Feeder Stats</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 2em;
+      background: #f0f0f0;
+    }
+    h1 {
+      margin-bottom: 0.5em;
+    }
+    .chart {
+      background: white;
+      padding: 1em;
+      margin-bottom: 2em;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    img {
+      max-width: 100%;
+      border: 1px solid #ccc;
+    }
+    a {
+      text-decoration: none;
+      font-size: 0.9em;
+      color: #0077cc;
+    }
+  </style>
+</head>
+<body>
+  <h1>📊 Bird Feeder Statistics</h1>
+  <p><a href="/">← Back to Gallery</a></p>
+
+  <div class="chart">
+    <h2>Top 10 Most Frequent Visitors</h2>
+    <img src="{{ url_for('static', filename='species_bar.png') }}" alt="Species Frequency">
+  </div>
+
+  <div class="chart">
+    <h2>Visits by Time of Day and Weekday</h2>
+    <img src="{{ url_for('static', filename='visit_heatmap.png') }}" alt="Visit Heatmap">
+  </div>
+</body>
+</html>

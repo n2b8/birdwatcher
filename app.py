@@ -4,6 +4,9 @@ import csv
 from datetime import datetime
 from picamera2 import Picamera2
 from PIL import Image
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
 
 app = Flask(__name__)
 VISITS_DIR = "visits"
@@ -32,6 +35,44 @@ def review():
             reader = csv.DictReader(f)
             entries = sorted(reader, key=lambda x: x["timestamp"], reverse=True)
     return render_template("review.html", entries=entries)
+
+@app.route("/stats")
+def stats():
+    if not os.path.exists(LOG_CSV):
+        return "No data available yet."
+
+    df = pd.read_csv(LOG_CSV, parse_dates=["timestamp"])
+
+    # Species frequency bar chart
+    top_species = df["species"].value_counts().head(10)
+    plt.figure(figsize=(10, 5))
+    top_species.plot(kind="barh", color="skyblue")
+    plt.xlabel("Number of Visits")
+    plt.ylabel("Species")
+    plt.title("Top 10 Most Frequently Seen Species")
+    plt.tight_layout()
+    plt.savefig("static/species_bar.png")
+    plt.close()
+
+    # Heatmap: visits by hour and day of week
+    df["hour"] = df["timestamp"].dt.hour
+    df["day"] = df["timestamp"].dt.day_name()
+    heatmap_data = df.groupby(["day", "hour"]).size().unstack(fill_value=0)
+
+    # Ensure correct day order
+    day_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    heatmap_data = heatmap_data.reindex(day_order)
+
+    plt.figure(figsize=(12, 6))
+    sns.heatmap(heatmap_data, cmap="YlGnBu")
+    plt.title("Bird Visit Frequency by Time of Day and Weekday")
+    plt.xlabel("Hour of Day")
+    plt.ylabel("Day of Week")
+    plt.tight_layout()
+    plt.savefig("static/visit_heatmap.png")
+    plt.close()
+
+    return render_template("stats.html")
 
 @app.route("/visits/<path:filename>")
 def serve_image(filename):
