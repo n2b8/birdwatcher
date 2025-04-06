@@ -6,7 +6,9 @@ import os
 import sys
 
 # Settings
-CONFIDENCE_THRESHOLD = 0.6  # Minimum probability to consider a valid bird
+CONFIDENCE_THRESHOLD = 2.0  # Minimum probability to consider a valid bird
+VISITS_DIR = "visits"
+LOG_FILE = os.path.join(VISITS_DIR, "log.csv")
 
 # Load ONNX model
 session = ort.InferenceSession("model/efficientnet_b0_nabirds.onnx")
@@ -16,8 +18,8 @@ input_name = session.get_inputs()[0].name
 with open("model/class_labels.txt") as f:
     class_labels = [line.strip() for line in f]
 
-# Ensure output folder exists
-os.makedirs("visits", exist_ok=True)
+# Ensure visits folder exists
+os.makedirs(VISITS_DIR, exist_ok=True)
 
 def preprocess_image(image_path):
     img = Image.open(image_path).convert("RGB").resize((224, 224))
@@ -29,7 +31,7 @@ def preprocess_image(image_path):
 def capture_and_classify(image_path=None):
     if image_path is None:
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        image_path = f"visits/visit_{timestamp}.jpg"
+        image_path = os.path.join(VISITS_DIR, f"visit_{timestamp}.jpg")
         os.system(f"libcamera-still -n -o {image_path} --width 640 --height 480")
     else:
         timestamp = image_path.split("_")[-1].split(".")[0]
@@ -44,12 +46,17 @@ def capture_and_classify(image_path=None):
     if confidence >= CONFIDENCE_THRESHOLD:
         species = class_labels[prediction]
         print(f"[{timestamp}] ✅ Detected: {species} ({confidence:.2f})")
-        with open("visits/log.csv", "a") as log:
-            log.write(f"{image_path},{species},confidence={confidence:.2f},timestamp={timestamp}\n")
+
+        # Write to log.csv (matching the expected column order)
+        with open(LOG_FILE, "a", newline="") as log:
+            if os.stat(LOG_FILE).st_size == 0:
+                log.write("filename,species,timestamp\n")
+            log.write(f"{os.path.basename(image_path)},{species},{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+
         return True
     else:
         print(f"[{timestamp}] ❌ Low confidence ({confidence:.2f}), skipping image.")
-        os.remove(image_path)  # Clean up false positive
+        os.remove(image_path)
         return False
 
 if __name__ == "__main__":
