@@ -1,0 +1,10 @@
+flask
+picamera2
+pillow
+onnxruntime
+numpy
+opencv-python
+requests
+matplotlib
+seaborn
+pandas
