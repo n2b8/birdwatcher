@@ -91,4 +91,4 @@ Use the images inside `not_a_bird/` to eventually expand your model with a "Not 
 
 ## License
 
-GNU License
+GPL License
