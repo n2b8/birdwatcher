@@ -11,7 +11,7 @@ CONFIDENCE_THRESHOLD = 2.0
 REVIEW_THRESHOLD = 0.6
 VISITS_DIR = "visits"
 LOG_FILE = os.path.join(VISITS_DIR, "log.csv")
-REVIEW_LOG = os.path.join(VISITS_DIR, "review_log.csv")
+REVIEW_LOG = os.path.join("review", "review_log.csv")
 
 # Load model
 session = ort.InferenceSession("model/efficientnet_b0_nabirds.onnx")
