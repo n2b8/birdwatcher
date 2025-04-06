@@ -27,10 +27,7 @@
     <form action="{{ url_for('delete', filename=entry.filename) }}" method="POST">
       <button type="submit">🗑️ Delete</button>
     </form>
-    <form action="{{ url_for('not_a_bird') }}" method="POST">
-      <input type="hidden" name="filename" value="{{ entry.filename }}">
-      <button type="submit">🚫 Not a Bird</button>
-    </form>
+    <!-- Not a Bird button is only available from the Review page -->
   </div>
   {% endfor %}
 </body>
