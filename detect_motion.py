@@ -12,12 +12,12 @@ last_motion_time = 0
 last_frame = None
 
 def capture_frame():
-    filename = "/tmp/motion_frame.jpg"
-    result = os.system(f"libcamera-still -n --width 640 --height 480 --quality 95 -o {filename}")
-    if result == 0 and os.path.exists(filename):
-        frame = cv2.imread(filename)
-        return True, frame
-    return False, None
+    temp_path = "/tmp/motion_frame.jpg"
+    result = os.system(f"libcamera-still -n --width 640 --height 480 --quality 95 -o {temp_path}")
+    if result == 0 and os.path.exists(temp_path):
+        frame = cv2.imread(temp_path)
+        return True, frame, temp_path
+    return False, None, None
 
 def detect_motion(current, previous, threshold=30):
     if previous is None or current is None:
@@ -36,7 +36,7 @@ print("[INFO] Starting motion detection with libcamera-still...")
 
 try:
     while True:
-        ret, frame = capture_frame()
+        ret, frame, temp_path = capture_frame()
         if not ret or frame is None:
             print("[ERROR] Frame not captured")
             time.sleep(1)
@@ -51,25 +51,20 @@ try:
             if now - last_motion_time > COOLDOWN_SECONDS:
                 last_motion_time = now
 
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                image_path = f"visits/visit_{timestamp}.jpg"
-
-                # Save full frame and classify
-                cv2.imwrite(image_path, frame)
-                print(f"[MOTION] Saved {image_path}, classifying...")
-
-                result = subprocess.run(["python3", "classify_bird.py", image_path])
+                print(f"[MOTION] Motion detected - classifying {temp_path}...")
+                result = subprocess.run(["python3", "classify_bird.py", temp_path])
                 if result.returncode != 0:
                     print("[INFO] No confident bird detected - image discarded.")
-                    continue
-                
+                else:
+                    print("[INFO] Bird image saved.")
+
                 # Save debug frames if enabled
                 if DEBUG and last_frame is not None:
                     cv2.imwrite("debug_last_frame.jpg", last_frame)
                     cv2.imwrite("debug_current_frame.jpg", small_frame)
 
         last_frame = small_frame
-        time.sleep(0.5)  # Polling interval
+        time.sleep(0.5)
 
 except KeyboardInterrupt:
     print("[INFO] Exiting gracefully.")
