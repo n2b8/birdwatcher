@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Review Uncertain Images</title>
+  <style>
+    body { font-family: sans-serif; padding: 2em; background: #f0f0f0; }
+    .visit { background: white; padding: 1em; margin-bottom: 1em; border-radius: 8px; }
+    .visit img { max-width: 200px; cursor: pointer; border: 1px solid #ccc; }
+    .visit time { font-size: 0.9em; color: #666; }
+    .buttons { margin-top: 0.5em; }
+    .buttons form { display: inline; margin-right: 1em; }
+  </style>
+</head>
+<body>
+  <h1>Review Uncertain Images</h1>
+  <p><a href="/">← Back to Main Dashboard</a></p>
+  {% for filename in files %}
+    <div class="visit">
+      <a href="{{ url_for('review_image', filename=filename) }}" target="_blank">
+        <img src="{{ url_for('review_image', filename=filename) }}" alt="{{ filename }}">
+      </a>
+      <div class="buttons">
+        <form method="POST" action="{{ url_for('mark_not_bird', filename=filename) }}">
+          <button type="submit">🚫 Not a Bird</button>
+        </form>
+        <form method="POST" action="{{ url_for('mark_bird', filename=filename) }}">
+          <button type="submit">✅ Mark as Bird</button>
+        </form>
+      </div>
+    </div>
+  {% else %}
+    <p>No files to review 🎉</p>
+  {% endfor %}
+</body>
+</html>
