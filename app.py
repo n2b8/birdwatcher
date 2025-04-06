@@ -30,10 +30,27 @@ def index():
 @app.route("/review")
 def review():
     entries = []
+    cleaned = []
+
     if os.path.exists(REVIEW_CSV):
         with open(REVIEW_CSV, "r") as f:
             reader = csv.DictReader(f)
-            entries = sorted(reader, key=lambda x: x["timestamp"], reverse=True)
+            for row in reader:
+                image_path = os.path.join(REVIEW_DIR, row["filename"])
+                if os.path.exists(image_path):
+                    entries.append(row)
+                else:
+                    cleaned.append(row["filename"])
+
+        # Rewrite the file without missing entries
+        if cleaned:
+            print(f"[CLEANUP] Removing missing images from review_log.csv: {cleaned}")
+            with open(REVIEW_CSV, "w", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=["filename", "species", "confidence", "timestamp"])
+                writer.writeheader()
+                for row in entries:
+                    writer.writerow(row)
+
     return render_template("review.html", entries=entries)
 
 @app.route("/stats")
