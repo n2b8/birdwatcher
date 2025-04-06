@@ -58,8 +58,11 @@ try:
                 cv2.imwrite(image_path, frame)
                 print(f"[MOTION] Saved {image_path}, classifying...")
 
-                subprocess.run(["python3", "classify_bird.py", image_path])
-
+                result = subprocess.run(["python3", "classify_bird.py", image_path])
+                if result.returncode != 0:
+                    print("[INFO] No confident bird detected - image discarded.")
+                    continue
+                
                 # Save debug frames if enabled
                 if DEBUG and last_frame is not None:
                     cv2.imwrite("debug_last_frame.jpg", last_frame)
