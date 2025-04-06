@@ -3,6 +3,10 @@ from PIL import Image
 import numpy as np
 import datetime
 import os
+import sys
+
+# Settings
+CONFIDENCE_THRESHOLD = 0.6  # Minimum probability to consider a valid bird
 
 # Load ONNX model
 session = ort.InferenceSession("model/efficientnet_b0_nabirds.onnx")
@@ -12,7 +16,7 @@ input_name = session.get_inputs()[0].name
 with open("model/class_labels.txt") as f:
     class_labels = [line.strip() for line in f]
 
-# Create output folders if needed
+# Ensure output folder exists
 os.makedirs("visits", exist_ok=True)
 
 def preprocess_image(image_path):
@@ -33,16 +37,22 @@ def capture_and_classify(image_path=None):
     # Preprocess and classify
     input_data = preprocess_image(image_path)
     output = session.run(None, {input_name: input_data})[0]
-    prediction = np.argmax(output)
-    species = class_labels[prediction]
+    probs = np.squeeze(output)
+    prediction = np.argmax(probs)
+    confidence = probs[prediction]
 
-    print(f"[{timestamp}] Detected: {species}")
-    with open("visits/log.csv", "a") as log:
-        log.write(f"{timestamp},{image_path},{species}\n")
-    print(f"[CLASSIFIED] {image_path} -> {species}")
+    if confidence >= CONFIDENCE_THRESHOLD:
+        species = class_labels[prediction]
+        print(f"[{timestamp}] ✅ Detected: {species} ({confidence:.2f})")
+        with open("visits/log.csv", "a") as log:
+            log.write(f"{image_path},{species},confidence={confidence:.2f},timestamp={timestamp}\n")
+        return True
+    else:
+        print(f"[{timestamp}] ❌ Low confidence ({confidence:.2f}), skipping image.")
+        os.remove(image_path)  # Clean up false positive
+        return False
 
 if __name__ == "__main__":
-    import sys
     image_path = sys.argv[1] if len(sys.argv) > 1 else None
-    capture_and_classify(image_path)
-
+    success = capture_and_classify(image_path)
+    sys.exit(0 if success else 1)
