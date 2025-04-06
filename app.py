@@ -143,16 +143,22 @@ def mark_not_a_bird(filename):
     review_path = os.path.join(REVIEW_DIR, filename)
     discard_path = os.path.join("not_a_bird", filename)
     os.makedirs("not_a_bird", exist_ok=True)
+
+    # Move image if it exists
     if os.path.exists(review_path):
         os.rename(review_path, discard_path)
 
-    with open(REVIEW_CSV, "r") as f:
-        lines = list(csv.DictReader(f))
-    with open(REVIEW_CSV, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=["filename", "species", "timestamp"])
-        writer.writeheader()
-        for row in lines:
-            if row["filename"] != filename:
+    # Update review_log.csv
+    if os.path.exists(REVIEW_CSV):
+        with open(REVIEW_CSV, "r") as f:
+            lines = list(csv.DictReader(f))
+
+        new_lines = [row for row in lines if row["filename"] != filename]
+
+        with open(REVIEW_CSV, "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=["filename", "species", "confidence", "timestamp"])
+            writer.writeheader()
+            for row in new_lines:
                 writer.writerow(row)
 
     return redirect(url_for("review"))
