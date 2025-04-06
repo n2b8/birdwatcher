@@ -10,7 +10,7 @@ VISITS_DIR = "visits"
 LOG_FILE = os.path.join(VISITS_DIR, "log.csv")
 MODEL_PATH = "model/efficientnet_b0_nabirds.onnx"
 LABELS_PATH = "model/class_labels.txt"
-CONFIDENCE_THRESHOLD = 0.6
+CONFIDENCE_THRESHOLD = 1.0
 
 # Load model
 session = ort.InferenceSession(MODEL_PATH)
