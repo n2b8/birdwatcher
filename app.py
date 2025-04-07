@@ -42,15 +42,20 @@ def review():
                 else:
                     cleaned.append(row["filename"])
 
-        # Rewrite the file without missing entries
         if cleaned:
             print(f"[CLEANUP] Removing missing images from review_log.csv: {cleaned}")
             with open(REVIEW_CSV, "w", newline="") as f:
                 writer = csv.DictWriter(f, fieldnames=["filename", "species", "confidence", "timestamp"])
                 writer.writeheader()
                 for row in entries:
-                    writer.writerow(row)
+                    writer.writerow({
+                        "filename": row.get("filename", ""),
+                        "species": row.get("species", ""),
+                        "confidence": row.get("confidence", ""),
+                        "timestamp": row.get("timestamp", "")
+                    })
 
+    print(f"[REVIEW] Loaded {len(entries)} entries, cleaned {len(cleaned)}")
     return render_template("review.html", entries=entries)
 
 @app.route("/stats")
@@ -127,18 +132,21 @@ def mark_good(filename):
         with open(REVIEW_CSV, "r") as f:
             lines = list(csv.DictReader(f))
 
-        # Write back review_log.csv without the marked file
         with open(REVIEW_CSV, "w", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=["filename", "species", "confidence", "timestamp"])
             writer.writeheader()
             for row in lines:
                 if row["filename"] != filename:
-                    writer.writerow(row)
+                    writer.writerow({
+                        "filename": row.get("filename", ""),
+                        "species": row.get("species", ""),
+                        "confidence": row.get("confidence", ""),
+                        "timestamp": row.get("timestamp", "")
+                    })
                 else:
-                    # Append this row to log.csv
                     log_row = {
-                        "filename": row["filename"],
-                        "species": row["species"],
+                        "filename": row.get("filename", ""),
+                        "species": row.get("species", ""),
                         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     }
                     write_header = not os.path.exists(LOG_CSV) or os.stat(LOG_CSV).st_size == 0
@@ -165,13 +173,18 @@ def mark_not_a_bird(filename):
         with open(REVIEW_CSV, "r") as f:
             lines = list(csv.DictReader(f))
 
-        new_lines = [row for row in lines if row["filename"] != filename]
+        new_lines = [row for row in lines if row.get("filename") != filename]
 
         with open(REVIEW_CSV, "w", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=["filename", "species", "confidence", "timestamp"])
             writer.writeheader()
             for row in new_lines:
-                writer.writerow(row)
+                writer.writerow({
+                    "filename": row.get("filename", ""),
+                    "species": row.get("species", ""),
+                    "confidence": row.get("confidence", ""),
+                    "timestamp": row.get("timestamp", "")
+                })
 
     return redirect(url_for("review"))
 
@@ -192,7 +205,6 @@ def snap():
         writer.writerow([filename, "Manual Snapshot", datetime.now().strftime("%Y-%m-%d %H:%M:%S")])
 
     return redirect(url_for("index"))
-
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
