@@ -34,7 +34,7 @@ def preprocess_image(image_path):
     arr = np.transpose(arr, (2, 0, 1))[np.newaxis, :]
     return arr.astype(np.float32)
 
-def capture_and_classify(image_path):
+def capture_and_classify(image_path, output_filename):
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     input_data = preprocess_image(image_path)
     output = session.run(None, {input_name: input_data})[0]
@@ -46,25 +46,30 @@ def capture_and_classify(image_path):
     print(f"Predicted: {species} ({confidence:.2f})")
 
     if confidence >= CONFIDENCE_THRESHOLD:
-        final_path = os.path.join(VISITS_DIR, os.path.basename(image_path))
+        final_path = os.path.join(VISITS_DIR, output_filename)
         shutil.move(image_path, final_path)
         with open(LOG_FILE, "a", newline="") as f:
             if os.stat(LOG_FILE).st_size == 0:
                 f.write("filename,species,timestamp\n")
-            f.write(f"{os.path.basename(final_path)},{species},{timestamp}\n")
+            f.write(f"{output_filename},{species},{timestamp}\n")
         return "accepted"
 
     else:
-        final_path = os.path.join(REVIEW_DIR, os.path.basename(image_path))
+        final_path = os.path.join(REVIEW_DIR, output_filename)
         shutil.move(image_path, final_path)
         with open(REVIEW_LOG, "a", newline="") as f:
             if os.stat(REVIEW_LOG).st_size == 0:
                 f.write("filename,species,confidence,timestamp\n")
-            f.write(f"{os.path.basename(final_path)},{species},{confidence:.2f},{timestamp}\n")
+            f.write(f"{output_filename},{species},{confidence:.2f},{timestamp}\n")
         return "review"
 
 if __name__ == "__main__":
-    image_path = sys.argv[1] if len(sys.argv) > 1 else None
-    if image_path:
-        result = capture_and_classify(image_path)
-        sys.exit(0 if result == "accepted" else 1)
+    if len(sys.argv) < 3:
+        print("Usage: python classify_bird.py <image_path> <output_filename>")
+        sys.exit(1)
+
+    image_path = sys.argv[1]
+    output_filename = sys.argv[2]
+
+    result = capture_and_classify(image_path, output_filename)
+    sys.exit(0 if result == "accepted" else 1)

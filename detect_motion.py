@@ -52,7 +52,10 @@ try:
                 last_motion_time = now
 
                 print(f"[MOTION] Motion detected - classifying {temp_path}...")
-                result = subprocess.run(["python3", "classify_bird.py", temp_path])
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                unique_filename = f"motion_{timestamp}.jpg"
+                result = subprocess.run(["python3", "classify_bird.py", temp_path, unique_filename])
+
                 if result.returncode != 0:
                     print("[INFO] No confident bird detected - image discarded.")
                 else:
