@@ -161,28 +161,37 @@ def mark_good(filename):
 @app.route("/mark_not_a_bird/<filename>", methods=["POST"])
 def mark_not_a_bird(filename):
     review_path = os.path.join(REVIEW_DIR, filename)
-    discard_path = os.path.join("not_a_bird", filename)
-    os.makedirs("not_a_bird", exist_ok=True)
+    discard_dir = "not_a_bird"
+    discard_path = os.path.join(discard_dir, filename)
+    os.makedirs(discard_dir, exist_ok=True)
 
-    # Move the image
+    print(f"[ACTION] Marking as 'not a bird': {filename}")
+
+    # Move file if it exists
     if os.path.exists(review_path):
+        print(f"[MOVE] {review_path} → {discard_path}")
         os.rename(review_path, discard_path)
+    else:
+        print(f"[SKIP] File not found: {review_path}")
 
-    # Remove that row from review_log.csv
-    new_rows = []
+    # Safely update review_log.csv
     if os.path.exists(REVIEW_CSV):
         with open(REVIEW_CSV, "r", newline="") as f:
             reader = csv.DictReader(f)
-            # Save header so we keep same structure
+            rows = list(reader)
             fieldnames = reader.fieldnames
-            for row in reader:
-                if row["filename"] != filename:
-                    new_rows.append(row)
 
-        with open(REVIEW_CSV, "w", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=fieldnames)
-            writer.writeheader()
-            writer.writerows(new_rows)
+        new_rows = [row for row in rows if row["filename"] != filename]
+        removed_count = len(rows) - len(new_rows)
+
+        if removed_count:
+            print(f"[UPDATE] Removing {removed_count} matching row(s) from review_log.csv")
+            with open(REVIEW_CSV, "w", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(new_rows)
+        else:
+            print(f"[WARN] No matching rows to remove in review_log.csv")
 
     return redirect(url_for("review"))
 
