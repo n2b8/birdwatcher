@@ -25,7 +25,15 @@ def index():
         with open(LOG_CSV, "r") as f:
             reader = csv.DictReader(f)
             entries = sorted(reader, key=lambda x: x["timestamp"], reverse=True)
-    return render_template("index.html", entries=entries)
+
+    not_a_bird_count = 0
+    if os.path.exists("not_a_bird"):
+        not_a_bird_count = len([
+            f for f in os.listdir("not_a_bird")
+            if f.lower().endswith((".jpg", ".jpeg", ".png"))
+        ])
+
+    return render_template("index.html", entries=entries, not_a_bird_count=not_a_bird_count)
 
 @app.route("/review")
 def review():
