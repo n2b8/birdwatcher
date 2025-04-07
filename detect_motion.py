@@ -13,7 +13,7 @@ last_frame = None
 
 def capture_frame():
     temp_path = "/tmp/motion_frame.jpg"
-    result = os.system(f"libcamera-still -n --width 640 --height 480 --quality 95 -o {temp_path}")
+    result = os.system(f"libcamera-still -n --width 1920 --height 1080 --quality 95 -o {temp_path}")
     if result == 0 and os.path.exists(temp_path):
         frame = cv2.imread(temp_path)
         return True, frame, temp_path
