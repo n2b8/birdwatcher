@@ -13,7 +13,7 @@ last_frame = None
 
 def capture_frame():
     temp_path = "/tmp/motion_frame.jpg"
-    result = os.system(f"libcamera-still -n --width 640 --height 480 --quality 95 -o {temp_path}")
+    result = os.system(f"libcamera-still -n --width 1920 --height 1080 --quality 95 -o {temp_path}")
     if result == 0 and os.path.exists(temp_path):
         frame = cv2.imread(temp_path)
         return True, frame, temp_path
@@ -21,7 +21,7 @@ def capture_frame():
 
 def detect_motion(current, previous, threshold=30):
     if previous is None or current is None:
-        return False
+        return 0  # Return the motion score as 0 when there is no previous frame
 
     diff = cv2.absdiff(previous, current)
     gray = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
@@ -30,7 +30,7 @@ def detect_motion(current, previous, threshold=30):
     motion_score = cv2.countNonZero(thresh)
 
     print(f"Motion score: {motion_score}")
-    return motion_score > 5000  # Adjust as needed
+    return motion_score  # Return the actual motion score
 
 print("[INFO] Starting motion detection with libcamera-still...")
 
@@ -45,8 +45,10 @@ try:
             print("[INFO] Frame captured")
 
         # Resize and compare frames
-        small_frame = cv2.resize(frame, (400, 300))
-        if detect_motion(small_frame, last_frame):
+        small_frame = cv2.resize(frame, (640, 480))  # Resize to 640x480 for motion detection
+        motion_score = detect_motion(small_frame, last_frame)  # Get the motion score
+
+        if motion_score > 5000:  # Only process if motion score exceeds threshold
             now = time.time()
             if now - last_motion_time > COOLDOWN_SECONDS:
                 last_motion_time = now
@@ -54,9 +56,6 @@ try:
                 print(f"[MOTION] Motion detected - classifying {temp_path}...")
                 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
                 unique_filename = f"motion_{timestamp}.jpg"
-
-                # Calculate the motion score here
-                motion_score = detect_motion(small_frame, last_frame)
 
                 # Pass motion_score along with image and filename to classify_bird.py
                 result = subprocess.run(["python3", "classify_bird.py", temp_path, unique_filename, str(motion_score)])
@@ -70,7 +69,6 @@ try:
                 if DEBUG and last_frame is not None:
                     cv2.imwrite("debug_last_frame.jpg", last_frame)
                     cv2.imwrite("debug_current_frame.jpg", small_frame)
-
 
         last_frame = small_frame
         time.sleep(0.5)

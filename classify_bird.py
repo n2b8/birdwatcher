@@ -65,7 +65,7 @@ def capture_and_classify(image_path, output_filename, motion_score=None):
         return "review"
 
 if __name__ == "__main__":
-    if len(sys.argv) < 3:
+    if len(sys.argv) < 4:
         print("Usage: python classify_bird.py <image_path> <output_filename> <motion_score>")
         sys.exit(1)
 
