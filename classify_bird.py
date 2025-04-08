@@ -5,6 +5,7 @@ import datetime
 import os
 import sys
 import shutil
+import requests
 
 # Settings
 CONFIDENCE_THRESHOLD = 2.0
@@ -14,6 +15,10 @@ REVIEW_DIR = "review"
 VISITS_DIR = "visits"
 LOG_FILE = os.path.join(VISITS_DIR, "log.csv")
 REVIEW_LOG = os.path.join(REVIEW_DIR, "review_log.csv")
+
+# Telegram Settings
+TELEGRAM_API_KEY = os.getenv("TELEGRAM_BOT_TOKEN")
+CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
 # Load model
 session = ort.InferenceSession("model/efficientnet_b0_nabirds.onnx")
@@ -26,6 +31,20 @@ with open("model/class_labels.txt") as f:
 # Ensure necessary folders exist
 os.makedirs(VISITS_DIR, exist_ok=True)
 os.makedirs(REVIEW_DIR, exist_ok=True)
+
+def send_telegram_message(message, image_path=None):
+    url = f"https://api.telegram.org/bot{TELEGRAM_API_KEY}/sendMessage"
+    payload = {
+        'chat_id': CHAT_ID,
+        'text': message
+    }
+    
+    if image_path:
+        with open(image_path, 'rb') as photo:
+            files = {'photo': photo}
+            requests.post(f"https://api.telegram.org/bot{TELEGRAM_API_KEY}/sendPhoto", data=payload, files=files)
+    else:
+        requests.post(url, data=payload)
 
 def preprocess_image(image_path):
     img = Image.open(image_path).convert("RGB").resize((224, 224))
@@ -45,6 +64,11 @@ def capture_and_classify(image_path, output_filename, motion_score=None):
 
     print(f"Predicted: {species} ({confidence:.2f})")
 
+    # Send Telegram notification when a bird is detected
+    if confidence >= CONFIDENCE_THRESHOLD:
+        message = f"New Bird Detected!\nSpecies: {species}\nConfidence: {confidence:.2f}\nMotion Score: {motion_score}\nTimestamp: {timestamp}"
+        send_telegram_message(message, image_path)  # Send the image with the message
+
     # Save to the visit log or review log depending on confidence threshold
     if confidence >= CONFIDENCE_THRESHOLD:
         final_path = os.path.join(VISITS_DIR, output_filename)
@@ -54,7 +78,6 @@ def capture_and_classify(image_path, output_filename, motion_score=None):
                 f.write("filename,species,confidence,motion_score,timestamp\n")
             f.write(f"{output_filename},{species},{confidence:.2f},{motion_score},{timestamp}\n")
         return "accepted"
-
     else:
         final_path = os.path.join(REVIEW_DIR, output_filename)
         shutil.move(image_path, final_path)
