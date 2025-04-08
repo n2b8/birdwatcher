@@ -8,7 +8,7 @@ import numpy as np
 # Settings
 COOLDOWN_SECONDS = 30
 BRIGHTNESS_THRESHOLD = 100  # Set the brightness threshold
-MOTION_THRESHOLD = 10000 # Set the motion threshold
+MOTION_THRESHOLD = 10000    # Set the motion threshold
 DEBUG = True  # Set to False to disable debug frame output
 
 last_motion_time = 0
@@ -45,7 +45,6 @@ def detect_motion(current, previous, threshold=30, motion_threshold=MOTION_THRES
     else:
         return 0  # Return 0 if motion score is below threshold
 
-
 print("[INFO] Starting motion detection with libcamera-still...")
 
 try:
@@ -79,8 +78,15 @@ try:
                 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
                 unique_filename = f"motion_{timestamp}.jpg"
 
-                # Pass motion_score along with image and filename to classify_bird.py
-                result = subprocess.run(["python3", "classify_bird.py", temp_path, unique_filename, str(motion_score)])
+                # 👇 Pass environment variables to subprocess
+                env = os.environ.copy()
+                env["TELEGRAM_BOT_TOKEN"] = os.getenv("TELEGRAM_BOT_TOKEN", "")
+                env["TELEGRAM_CHAT_ID"] = os.getenv("TELEGRAM_CHAT_ID", "")
+
+                result = subprocess.run(
+                    ["python3", "classify_bird.py", temp_path, unique_filename, str(motion_score)],
+                    env=env
+                )
 
                 if result.returncode != 0:
                     print("[INFO] No confident bird detected - image discarded.")
