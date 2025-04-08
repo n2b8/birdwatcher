@@ -3,9 +3,11 @@ import time
 import os
 import subprocess
 from datetime import datetime
+import numpy as np
 
 # Settings
 COOLDOWN_SECONDS = 30
+BRIGHTNESS_THRESHOLD = 100  # Set the brightness threshold
 DEBUG = True  # Set to False to disable debug frame output
 
 last_motion_time = 0
@@ -18,6 +20,11 @@ def capture_frame():
         frame = cv2.imread(temp_path)
         return True, frame, temp_path
     return False, None, None
+
+def calculate_brightness(image):
+    # Convert to grayscale and calculate the mean brightness
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    return np.mean(gray)
 
 def detect_motion(current, previous, threshold=30):
     if previous is None or current is None:
@@ -43,6 +50,15 @@ try:
             continue
         else:
             print("[INFO] Frame captured")
+
+        # Calculate the brightness of the frame
+        brightness = calculate_brightness(frame)
+        print(f"Image brightness: {brightness}")
+
+        # If the brightness is below the threshold, discard the image
+        if brightness < BRIGHTNESS_THRESHOLD:
+            print("[INFO] Image brightness is too low, discarding image.")
+            continue  # Skip this image and move to the next one
 
         # Resize and compare frames
         small_frame = cv2.resize(frame, (640, 480))
