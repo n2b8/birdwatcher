@@ -34,7 +34,7 @@ def preprocess_image(image_path):
     arr = np.transpose(arr, (2, 0, 1))[np.newaxis, :]
     return arr.astype(np.float32)
 
-def capture_and_classify(image_path, output_filename):
+def capture_and_classify(image_path, output_filename, motion_score=None):
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     input_data = preprocess_image(image_path)
     output = session.run(None, {input_name: input_data})[0]
@@ -45,13 +45,14 @@ def capture_and_classify(image_path, output_filename):
 
     print(f"Predicted: {species} ({confidence:.2f})")
 
+    # Save to the visit log or review log depending on confidence threshold
     if confidence >= CONFIDENCE_THRESHOLD:
         final_path = os.path.join(VISITS_DIR, output_filename)
         shutil.move(image_path, final_path)
         with open(LOG_FILE, "a", newline="") as f:
             if os.stat(LOG_FILE).st_size == 0:
-                f.write("filename,species,timestamp\n")
-            f.write(f"{output_filename},{species},{timestamp}\n")
+                f.write("filename,species,confidence,motion_score,timestamp\n")
+            f.write(f"{output_filename},{species},{confidence:.2f},{motion_score},{timestamp}\n")
         return "accepted"
 
     else:
@@ -59,17 +60,18 @@ def capture_and_classify(image_path, output_filename):
         shutil.move(image_path, final_path)
         with open(REVIEW_LOG, "a", newline="") as f:
             if os.stat(REVIEW_LOG).st_size == 0:
-                f.write("filename,species,confidence,timestamp\n")
-            f.write(f"{output_filename},{species},{confidence:.2f},{timestamp}\n")
+                f.write("filename,species,confidence,motion_score,timestamp\n")
+            f.write(f"{output_filename},{species},{confidence:.2f},{motion_score},{timestamp}\n")
         return "review"
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print("Usage: python classify_bird.py <image_path> <output_filename>")
+        print("Usage: python classify_bird.py <image_path> <output_filename> <motion_score>")
         sys.exit(1)
 
     image_path = sys.argv[1]
     output_filename = sys.argv[2]
+    motion_score = sys.argv[3]  # Expecting the motion score to be passed from the subprocess
 
-    result = capture_and_classify(image_path, output_filename)
+    result = capture_and_classify(image_path, output_filename, motion_score)
     sys.exit(0 if result == "accepted" else 1)
