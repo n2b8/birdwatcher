@@ -9,6 +9,7 @@
     .review img { max-width: 200px; cursor: pointer; border: 1px solid #ccc; }
     .review time { font-size: 0.9em; color: #666; }
     form { display: inline-block; margin-right: 0.5em; }
+    .motion-score { font-size: 0.9em; color: #888; }
   </style>
 </head>
 <body>
@@ -17,6 +18,7 @@
   {% for entry in entries %}
   <div class="review">
     <strong>{{ entry.species }}</strong><br>
+    <span class="motion-score">Motion Score: {{ entry.motion_score }}</span><br>
     <time>{{ entry.timestamp }}</time><br>
     <a href="{{ url_for('serve_review_image', filename=entry.filename) }}" target="_blank">
       <img src="{{ url_for('serve_review_image', filename=entry.filename) }}" alt="{{ entry.species }}">

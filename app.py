@@ -53,13 +53,14 @@ def review():
         if cleaned:
             print(f"[CLEANUP] Removing missing images from review_log.csv: {cleaned}")
             with open(REVIEW_CSV, "w", newline="") as f:
-                writer = csv.DictWriter(f, fieldnames=["filename", "species", "confidence", "timestamp"])
+                writer = csv.DictWriter(f, fieldnames=["filename", "species", "confidence", "motion_score", "timestamp"])
                 writer.writeheader()
                 for row in entries:
                     writer.writerow({
                         "filename": row.get("filename", ""),
                         "species": row.get("species", ""),
                         "confidence": row.get("confidence", ""),
+                        "motion_score": row.get("motion_score", ""),
                         "timestamp": row.get("timestamp", "")
                     })
 
