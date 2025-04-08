@@ -54,7 +54,12 @@ try:
                 print(f"[MOTION] Motion detected - classifying {temp_path}...")
                 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
                 unique_filename = f"motion_{timestamp}.jpg"
-                result = subprocess.run(["python3", "classify_bird.py", temp_path, unique_filename])
+
+                # Calculate the motion score here
+                motion_score = detect_motion(small_frame, last_frame)
+
+                # Pass motion_score along with image and filename to classify_bird.py
+                result = subprocess.run(["python3", "classify_bird.py", temp_path, unique_filename, str(motion_score)])
 
                 if result.returncode != 0:
                     print("[INFO] No confident bird detected - image discarded.")
@@ -65,6 +70,7 @@ try:
                 if DEBUG and last_frame is not None:
                     cv2.imwrite("debug_last_frame.jpg", last_frame)
                     cv2.imwrite("debug_current_frame.jpg", small_frame)
+
 
         last_frame = small_frame
         time.sleep(0.5)
