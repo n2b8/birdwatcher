@@ -69,7 +69,7 @@ try:
         # Resize and compare frames
         small_frame = cv2.resize(frame, (640, 480))
         motion_score = detect_motion(small_frame, last_frame)  # Get the motion score
-        if motion_score > 5000:  # If the motion score is large enough, proceed to classify
+        if motion_score > MOTION_THRESHOLD:  # If the motion score is large enough, proceed to classify
             now = time.time()
             if now - last_motion_time > COOLDOWN_SECONDS:
                 last_motion_time = now
