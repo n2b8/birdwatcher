@@ -8,6 +8,7 @@ import numpy as np
 # Settings
 COOLDOWN_SECONDS = 30
 BRIGHTNESS_THRESHOLD = 100  # Set the brightness threshold
+MOTION_THRESHOLD = 10000 # Set the motion threshold
 DEBUG = True  # Set to False to disable debug frame output
 
 last_motion_time = 0
@@ -26,7 +27,7 @@ def calculate_brightness(image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     return np.mean(gray)
 
-def detect_motion(current, previous, threshold=30):
+def detect_motion(current, previous, threshold=30, motion_threshold=MOTION_THRESHOLD):
     if previous is None or current is None:
         return 0  # Return the motion score as 0 when there is no previous frame
 
@@ -37,7 +38,13 @@ def detect_motion(current, previous, threshold=30):
     motion_score = cv2.countNonZero(thresh)
 
     print(f"Motion score: {motion_score}")
-    return motion_score  # Return the actual motion score
+
+    # Compare against the motion threshold
+    if motion_score > motion_threshold:
+        return motion_score  # Return motion score if it exceeds the threshold
+    else:
+        return 0  # Return 0 if motion score is below threshold
+
 
 print("[INFO] Starting motion detection with libcamera-still...")
 
