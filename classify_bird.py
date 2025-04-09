@@ -8,8 +8,7 @@ import shutil
 import requests
 
 # Settings
-CONFIDENCE_THRESHOLD = 2.0
-REVIEW_THRESHOLD = 0.6
+CONFIDENCE_THRESHOLD = 0.9  # Adjust as needed
 TMP_DIR = "/tmp"
 REVIEW_DIR = "review"
 VISITS_DIR = "visits"
@@ -34,11 +33,7 @@ os.makedirs(REVIEW_DIR, exist_ok=True)
 
 def send_telegram_message(message, image_path=None):
     url = f"https://api.telegram.org/bot{TELEGRAM_API_KEY}/sendMessage"
-    payload = {
-        'chat_id': CHAT_ID,
-        'text': message
-    }
-    
+    payload = {'chat_id': CHAT_ID, 'text': message}
     if image_path:
         with open(image_path, 'rb') as photo:
             files = {'photo': photo}
@@ -53,23 +48,25 @@ def preprocess_image(image_path):
     arr = np.transpose(arr, (2, 0, 1))[np.newaxis, :]
     return arr.astype(np.float32)
 
+def softmax(x):
+    e_x = np.exp(x - np.max(x))
+    return e_x / e_x.sum()
+
 def capture_and_classify(image_path, output_filename, motion_score=None):
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     input_data = preprocess_image(image_path)
     output = session.run(None, {input_name: input_data})[0]
-    probs = np.squeeze(output)
+    probs = softmax(np.squeeze(output))
     prediction = np.argmax(probs)
     confidence = probs[prediction]
     species = class_labels[prediction]
 
     print(f"Predicted: {species} ({confidence:.2f})")
 
-    # Send Telegram notification when a bird is detected
     if confidence >= CONFIDENCE_THRESHOLD:
         message = f"New Bird Detected!\nSpecies: {species}\nConfidence: {confidence:.2f}\nMotion Score: {motion_score}\nTimestamp: {timestamp}"
-        send_telegram_message(message, image_path)  # Send the image with the message
+        send_telegram_message(message, image_path)
 
-    # Save to the visit log or review log depending on confidence threshold
     if confidence >= CONFIDENCE_THRESHOLD:
         final_path = os.path.join(VISITS_DIR, output_filename)
         shutil.move(image_path, final_path)
@@ -94,7 +91,7 @@ if __name__ == "__main__":
 
     image_path = sys.argv[1]
     output_filename = sys.argv[2]
-    motion_score = sys.argv[3]  # Expecting the motion score to be passed from the subprocess
+    motion_score = sys.argv[3]
 
     result = capture_and_classify(image_path, output_filename, motion_score)
     sys.exit(0 if result == "accepted" else 1)
