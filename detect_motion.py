@@ -14,6 +14,16 @@ DEBUG = True  # Set to False to disable debug frame output
 last_motion_time = 0
 last_frame = None
 
+def stabilize_frame(prev_gray, curr_gray):
+    warp_matrix = np.eye(2, 3, dtype=np.float32)
+    try:
+        cc, warp_matrix = cv2.findTransformECC(prev_gray, curr_gray, warp_matrix, cv2.MOTION_EUCLIDEAN)
+        stabilized = cv2.warpAffine(curr_gray, warp_matrix, (curr_gray.shape[1], curr_gray.shape[0]), flags=cv2.INTER_LINEAR + cv2.WARP_INVERSE_MAP)
+        return stabilized
+    except cv2.error as e:
+        print(f"[WARN] Stabilization failed: {e}")
+        return curr_gray
+
 def capture_frame():
     temp_path = "/tmp/motion_frame.jpg"
     result = os.system(f"libcamera-still -n --width 1920 --height 1080 --quality 95 -o {temp_path}")
@@ -68,7 +78,16 @@ try:
 
         # Resize and compare frames
         small_frame = cv2.resize(frame, (640, 480))
-        motion_score = detect_motion(small_frame, last_frame)  # Get the motion score
+        gray_current = cv2.cvtColor(small_frame, cv2.COLOR_BGR2GRAY)
+        gray_prev = cv2.cvtColor(last_frame, cv2.COLOR_BGR2GRAY) if last_frame is not None else None
+
+        # Align the current frame to the previous one if possible
+        if gray_prev is not None:
+            stabilized_current = stabilize_frame(gray_prev, gray_current)
+            motion_score = detect_motion(stabilized_current, gray_prev)
+        else:
+            motion_score = 0
+
         if motion_score > MOTION_THRESHOLD:  # If the motion score is large enough, proceed to classify
             now = time.time()
             if now - last_motion_time > COOLDOWN_SECONDS:
