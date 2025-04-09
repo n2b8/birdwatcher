@@ -8,7 +8,7 @@ import shutil
 import requests
 
 # Settings
-CONFIDENCE_THRESHOLD = 0.9  # Adjust as needed
+CONFIDENCE_THRESHOLD = 0.7  # Adjust as needed
 TMP_DIR = "/tmp"
 REVIEW_DIR = "review"
 VISITS_DIR = "visits"
