@@ -7,9 +7,9 @@ import numpy as np
 
 # Settings
 COOLDOWN_SECONDS = 30
-BRIGHTNESS_THRESHOLD = 98  # Set the brightness threshold
-MOTION_THRESHOLD = 10000    # Set the motion threshold
-DEBUG = True  # Set to False to disable debug frame output
+BRIGHTNESS_THRESHOLD = 98
+MOTION_THRESHOLD = 10000
+DEBUG = True
 
 last_motion_time = 0
 last_frame = None
@@ -33,27 +33,25 @@ def capture_frame():
     return False, None, None
 
 def calculate_brightness(image):
-    # Convert to grayscale and calculate the mean brightness
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     return np.mean(gray)
 
 def detect_motion(current, previous, threshold=30, motion_threshold=MOTION_THRESHOLD):
     if previous is None or current is None:
-        return 0  # Return the motion score as 0 when there is no previous frame
+        return 0
 
     diff = cv2.absdiff(previous, current)
-    gray = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
+    if len(diff.shape) == 3 and diff.shape[2] == 3:
+        gray = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
+    else:
+        gray = diff
+
     blurred = cv2.GaussianBlur(gray, (5, 5), 0)
     _, thresh = cv2.threshold(blurred, threshold, 255, cv2.THRESH_BINARY)
     motion_score = cv2.countNonZero(thresh)
 
     print(f"Motion score: {motion_score}")
-
-    # Compare against the motion threshold
-    if motion_score > motion_threshold:
-        return motion_score  # Return motion score if it exceeds the threshold
-    else:
-        return 0  # Return 0 if motion score is below threshold
+    return motion_score if motion_score > motion_threshold else 0
 
 print("[INFO] Starting motion detection with libcamera-still...")
 
@@ -64,40 +62,33 @@ try:
             print("[ERROR] Frame not captured")
             time.sleep(1)
             continue
-        else:
-            print("[INFO] Frame captured")
 
-        # Calculate the brightness of the frame
+        print("[INFO] Frame captured")
         brightness = calculate_brightness(frame)
         print(f"Image brightness: {brightness}")
 
-        # If the brightness is below the threshold, discard the image
         if brightness < BRIGHTNESS_THRESHOLD:
             print("[INFO] Image brightness is too low, discarding image.")
-            continue  # Skip this image and move to the next one
+            continue
 
-        # Resize and compare frames
         small_frame = cv2.resize(frame, (640, 480))
         gray_current = cv2.cvtColor(small_frame, cv2.COLOR_BGR2GRAY)
         gray_prev = cv2.cvtColor(last_frame, cv2.COLOR_BGR2GRAY) if last_frame is not None else None
 
-        # Align the current frame to the previous one if possible
         if gray_prev is not None:
             stabilized_current = stabilize_frame(gray_prev, gray_current)
             motion_score = detect_motion(stabilized_current, gray_prev)
         else:
             motion_score = 0
 
-        if motion_score > MOTION_THRESHOLD:  # If the motion score is large enough, proceed to classify
+        if motion_score > MOTION_THRESHOLD:
             now = time.time()
             if now - last_motion_time > COOLDOWN_SECONDS:
                 last_motion_time = now
-
                 print(f"[MOTION] Motion detected - classifying {temp_path}...")
                 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
                 unique_filename = f"motion_{timestamp}.jpg"
 
-                # 👇 Pass environment variables to subprocess
                 env = os.environ.copy()
                 env["TELEGRAM_BOT_TOKEN"] = os.getenv("TELEGRAM_BOT_TOKEN", "")
                 env["TELEGRAM_CHAT_ID"] = os.getenv("TELEGRAM_CHAT_ID", "")
@@ -112,7 +103,6 @@ try:
                 else:
                     print("[INFO] Bird image saved.")
 
-                # Save debug frames if enabled
                 if DEBUG and last_frame is not None:
                     cv2.imwrite("debug_last_frame.jpg", last_frame)
                     cv2.imwrite("debug_current_frame.jpg", small_frame)
