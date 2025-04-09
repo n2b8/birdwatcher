@@ -7,7 +7,7 @@ import numpy as np
 
 # Settings
 COOLDOWN_SECONDS = 30
-BRIGHTNESS_THRESHOLD = 100  # Set the brightness threshold
+BRIGHTNESS_THRESHOLD = 98  # Set the brightness threshold
 MOTION_THRESHOLD = 10000    # Set the motion threshold
 DEBUG = True  # Set to False to disable debug frame output
 
