@@ -10,19 +10,23 @@ COOLDOWN_SECONDS = 30
 BRIGHTNESS_THRESHOLD = 98
 MOTION_THRESHOLD = 10000
 DEBUG = True
+MOTION_STABILIZATION_THRESHOLD = 0.9
 
 last_motion_time = 0
 last_frame = None
 
-def stabilize_frame(prev_gray, curr_gray):
+def stabilize_frame(prev_gray, curr_gray, cc_threshold=MOTION_STABILIZATION_THRESHOLD):
     warp_matrix = np.eye(2, 3, dtype=np.float32)
     try:
         cc, warp_matrix = cv2.findTransformECC(prev_gray, curr_gray, warp_matrix, cv2.MOTION_EUCLIDEAN)
+        if cc < cc_threshold:
+            print(f"[WARN] Stabilization confidence too low: {cc:.2f}")
+            return None
         stabilized = cv2.warpAffine(curr_gray, warp_matrix, (curr_gray.shape[1], curr_gray.shape[0]), flags=cv2.INTER_LINEAR + cv2.WARP_INVERSE_MAP)
         return stabilized
     except cv2.error as e:
         print(f"[WARN] Stabilization failed: {e}")
-        return curr_gray
+        return None
 
 def capture_frame():
     temp_path = "/tmp/motion_frame.jpg"
@@ -41,11 +45,7 @@ def detect_motion(current, previous, threshold=30, motion_threshold=MOTION_THRES
         return 0
 
     diff = cv2.absdiff(previous, current)
-    if len(diff.shape) == 3 and diff.shape[2] == 3:
-        gray = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
-    else:
-        gray = diff
-
+    gray = diff if len(diff.shape) == 2 else cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
     blurred = cv2.GaussianBlur(gray, (5, 5), 0)
     _, thresh = cv2.threshold(blurred, threshold, 255, cv2.THRESH_BINARY)
     motion_score = cv2.countNonZero(thresh)
@@ -77,7 +77,7 @@ try:
 
         if gray_prev is not None:
             stabilized_current = stabilize_frame(gray_prev, gray_current)
-            motion_score = detect_motion(stabilized_current, gray_prev)
+            motion_score = detect_motion(stabilized_current, gray_prev) if stabilized_current is not None else 0
         else:
             motion_score = 0
 
