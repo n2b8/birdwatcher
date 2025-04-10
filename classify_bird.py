@@ -76,17 +76,28 @@ def capture_and_classify(image_path, output_filename, motion_score=None):
 
     print(f"Predicted: {species} ({confidence:.2f})")
 
-    # High confidence: save and notify with a custom caption
+    # High confidence branch:
     if confidence >= CONFIDENCE_THRESHOLD:
-        message = f"A {species} has just visited your feeder!"
-        send_telegram_message(message, image_path)
-        final_path = os.path.join(VISITS_DIR, output_filename)
-        shutil.move(image_path, final_path)
-        with open(LOG_FILE, "a", newline="") as f:
-            if os.stat(LOG_FILE).st_size == 0:
-                f.write("filename,species,confidence,motion_score,timestamp\n")
-            f.write(f"{output_filename},{species},{confidence:.2f},{motion_score},{timestamp}\n")
-        return "accepted"
+        # If prediction is "not_a_bird", move to review folder instead of visits
+        if species.lower() == "not_a_bird":
+            final_path = os.path.join(REVIEW_DIR, output_filename)
+            shutil.move(image_path, final_path)
+            with open(REVIEW_LOG, "a", newline="") as f:
+                if os.stat(REVIEW_LOG).st_size == 0:
+                    f.write("filename,species,confidence,motion_score,timestamp\n")
+                f.write(f"{output_filename},{species},{confidence:.2f},{motion_score},{timestamp}\n")
+            return "review"
+        else:
+            # Accept the image and notify if it's a bird.
+            message = f"A {species} has just visited your feeder!"
+            send_telegram_message(message, image_path)
+            final_path = os.path.join(VISITS_DIR, output_filename)
+            shutil.move(image_path, final_path)
+            with open(LOG_FILE, "a", newline="") as f:
+                if os.stat(LOG_FILE).st_size == 0:
+                    f.write("filename,species,confidence,motion_score,timestamp\n")
+                f.write(f"{output_filename},{species},{confidence:.2f},{motion_score},{timestamp}\n")
+            return "accepted"
 
     # Medium confidence: review
     elif confidence >= REVIEW_THRESHOLD:
