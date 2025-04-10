@@ -7,6 +7,10 @@ import sys
 import shutil
 import requests
 
+# Debugging telegram issues
+print("TELEGRAM_BOT_TOKEN:", os.getenv("TELEGRAM_BOT_TOKEN"))
+print("TELEGRAM_CHAT_ID:", os.getenv("TELEGRAM_CHAT_ID"))
+
 # Settings
 CONFIDENCE_THRESHOLD = 0.7
 REVIEW_THRESHOLD = 0.1
@@ -21,11 +25,11 @@ TELEGRAM_API_KEY = os.getenv("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
 # Load model
-session = ort.InferenceSession("model/efficientnet_b0_nabirds.onnx")
+session = ort.InferenceSession("model/efficientnet_b7_nabirds.onnx")
 input_name = session.get_inputs()[0].name
 
 # Load class labels
-with open("model/class_labels.txt") as f:
+with open("model/class_labels_v2.txt") as f:
     class_labels = [line.strip() for line in f]
 
 # Ensure necessary folders exist
@@ -33,17 +37,25 @@ os.makedirs(VISITS_DIR, exist_ok=True)
 os.makedirs(REVIEW_DIR, exist_ok=True)
 
 def send_telegram_message(message, image_path=None):
-    url = f"https://api.telegram.org/bot{TELEGRAM_API_KEY}/sendMessage"
-    payload = {'chat_id': CHAT_ID, 'text': message}
     if image_path:
+        # Use the sendPhoto method with caption
+        url = f"https://api.telegram.org/bot{TELEGRAM_API_KEY}/sendPhoto"
+        payload = {'chat_id': CHAT_ID, 'caption': message}  # using 'caption' instead of 'text'
         with open(image_path, 'rb') as photo:
             files = {'photo': photo}
-            requests.post(f"https://api.telegram.org/bot{TELEGRAM_API_KEY}/sendPhoto", data=payload, files=files)
+            response = requests.post(url, data=payload, files=files)
+            print("Telegram sendPhoto response:", response.status_code, response.text)
     else:
-        requests.post(url, data=payload)
+        url = f"https://api.telegram.org/bot{TELEGRAM_API_KEY}/sendMessage"
+        payload = {'chat_id': CHAT_ID, 'text': message}
+        response = requests.post(url, data=payload)
+        print("Telegram sendMessage response:", response.status_code, response.text)
+        
+    if response.status_code != 200:
+        print(f"[ERROR] Telegram API returned status code {response.status_code}: {response.text}")
 
 def preprocess_image(image_path):
-    img = Image.open(image_path).convert("RGB").resize((224, 224))
+    img = Image.open(image_path).convert("RGB").resize((600, 600))
     arr = np.array(img).astype(np.float32) / 255.0
     arr = (arr - [0.485, 0.456, 0.406]) / [0.229, 0.224, 0.225]
     arr = np.transpose(arr, (2, 0, 1))[np.newaxis, :]
@@ -64,9 +76,9 @@ def capture_and_classify(image_path, output_filename, motion_score=None):
 
     print(f"Predicted: {species} ({confidence:.2f})")
 
-    # High confidence: save and notify
+    # High confidence: save and notify with a custom caption
     if confidence >= CONFIDENCE_THRESHOLD:
-        message = f"New Bird Detected!\nSpecies: {species}\nConfidence: {confidence:.2f}\nMotion Score: {motion_score}\nTimestamp: {timestamp}"
+        message = f"A {species} has just visited your feeder!"
         send_telegram_message(message, image_path)
         final_path = os.path.join(VISITS_DIR, output_filename)
         shutil.move(image_path, final_path)
