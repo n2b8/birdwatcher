@@ -19,7 +19,7 @@ os.makedirs(IMAGE_DIR, exist_ok=True)
 @app.route("/")
 def index():
     page = request.args.get("page", default=1, type=int)
-    per_page = 20
+    per_page = 10
     offset = (page - 1) * per_page
 
     with get_connection() as conn:
@@ -51,7 +51,7 @@ def index():
 @app.route("/review")
 def review():
     page = request.args.get("page", default=1, type=int)
-    per_page = 20
+    per_page = 10
     offset = (page - 1) * per_page
 
     with get_connection() as conn:
