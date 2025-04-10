@@ -38,9 +38,12 @@ def send_telegram_message(message, image_path=None):
     if image_path:
         with open(image_path, 'rb') as photo:
             files = {'photo': photo}
-            requests.post(f"https://api.telegram.org/bot{TELEGRAM_API_KEY}/sendPhoto", data=payload, files=files)
+            response = requests.post(f"https://api.telegram.org/bot{TELEGRAM_API_KEY}/sendPhoto", data=payload, files=files)
     else:
-        requests.post(url, data=payload)
+        response = requests.post(url, data=payload)
+    # Check status and print an error if needed
+    if response.status_code != 200:
+        print(f"[ERROR] Telegram API returned status code {response.status_code}: {response.text}")
 
 def preprocess_image(image_path):
     img = Image.open(image_path).convert("RGB").resize((600, 600))
