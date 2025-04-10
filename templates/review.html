@@ -39,5 +39,14 @@
     </form>
   </div>
   {% endfor %}
+  <div style="margin-top: 2em;">
+    {% if has_prev %}
+      <a href="{{ url_for(request.endpoint, page=page-1) }}">⬅️ Previous</a>
+    {% endif %}
+    {% if has_next %}
+      {% if has_prev %} | {% endif %}
+      <a href="{{ url_for(request.endpoint, page=page+1) }}">Next ➡️</a>
+    {% endif %}
+  </div>  
 </body>
 </html>

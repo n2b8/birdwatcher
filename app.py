@@ -18,6 +18,10 @@ os.makedirs(IMAGE_DIR, exist_ok=True)
 
 @app.route("/")
 def index():
+    page = request.args.get("page", default=1, type=int)
+    per_page = 20
+    offset = (page - 1) * per_page
+
     with get_connection() as conn:
         cursor = conn.execute("""
             SELECT * FROM visits
@@ -25,22 +29,52 @@ def index():
               AND confidence >= 0.7
               AND LOWER(species) != 'not_a_bird'
             ORDER BY timestamp DESC
-        """)
+            LIMIT ? OFFSET ?
+        """, (per_page, offset))
         rows = [dict(zip([col[0] for col in cursor.description], row)) for row in cursor.fetchall()]
+
+        cursor = conn.execute("""
+            SELECT COUNT(*) FROM visits
+            WHERE confidence IS NOT NULL
+              AND confidence >= 0.7
+              AND LOWER(species) != 'not_a_bird'
+        """)
+        total_count = cursor.fetchone()[0]
+
     not_a_bird_count = get_not_a_bird_count()
-    return render_template("index.html", entries=rows, not_a_bird_count=not_a_bird_count)
+    has_next = (offset + per_page) < total_count
+    has_prev = page > 1
+
+    return render_template("index.html", entries=rows, not_a_bird_count=not_a_bird_count,
+                           page=page, has_next=has_next, has_prev=has_prev)
 
 @app.route("/review")
 def review():
+    page = request.args.get("page", default=1, type=int)
+    per_page = 20
+    offset = (page - 1) * per_page
+
     with get_connection() as conn:
         cursor = conn.execute("""
             SELECT * FROM visits
             WHERE (confidence IS NOT NULL AND confidence >= 0.1 AND confidence < 0.7)
                OR LOWER(species) = 'not_a_bird'
             ORDER BY timestamp DESC
-        """)
+            LIMIT ? OFFSET ?
+        """, (per_page, offset))
         rows = [dict(zip([col[0] for col in cursor.description], row)) for row in cursor.fetchall()]
-    return render_template("review.html", entries=rows)
+
+        cursor = conn.execute("""
+            SELECT COUNT(*) FROM visits
+            WHERE (confidence IS NOT NULL AND confidence >= 0.1 AND confidence < 0.7)
+               OR LOWER(species) = 'not_a_bird'
+        """)
+        total_count = cursor.fetchone()[0]
+
+    has_next = (offset + per_page) < total_count
+    has_prev = page > 1
+
+    return render_template("review.html", entries=rows, page=page, has_next=has_next, has_prev=has_prev)
 
 @app.route("/stats")
 def stats():
