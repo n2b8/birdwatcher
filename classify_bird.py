@@ -37,15 +37,20 @@ os.makedirs(VISITS_DIR, exist_ok=True)
 os.makedirs(REVIEW_DIR, exist_ok=True)
 
 def send_telegram_message(message, image_path=None):
-    url = f"https://api.telegram.org/bot{TELEGRAM_API_KEY}/sendMessage"
-    payload = {'chat_id': CHAT_ID, 'text': message}
     if image_path:
+        # Use the sendPhoto method with caption
+        url = f"https://api.telegram.org/bot{TELEGRAM_API_KEY}/sendPhoto"
+        payload = {'chat_id': CHAT_ID, 'caption': message}  # using 'caption' instead of 'text'
         with open(image_path, 'rb') as photo:
             files = {'photo': photo}
-            response = requests.post(f"https://api.telegram.org/bot{TELEGRAM_API_KEY}/sendPhoto", data=payload, files=files)
+            response = requests.post(url, data=payload, files=files)
+            print("Telegram sendPhoto response:", response.status_code, response.text)
     else:
+        url = f"https://api.telegram.org/bot{TELEGRAM_API_KEY}/sendMessage"
+        payload = {'chat_id': CHAT_ID, 'text': message}
         response = requests.post(url, data=payload)
-    # Check status and print an error if needed
+        print("Telegram sendMessage response:", response.status_code, response.text)
+        
     if response.status_code != 200:
         print(f"[ERROR] Telegram API returned status code {response.status_code}: {response.text}")
 
@@ -71,9 +76,9 @@ def capture_and_classify(image_path, output_filename, motion_score=None):
 
     print(f"Predicted: {species} ({confidence:.2f})")
 
-    # High confidence: save and notify
+    # High confidence: save and notify with a custom caption
     if confidence >= CONFIDENCE_THRESHOLD:
-        message = f"New Bird Detected!\nSpecies: {species}\nConfidence: {confidence:.2f}\nMotion Score: {motion_score}\nTimestamp: {timestamp}"
+        message = f"A {species} has just visited your feeder!"
         send_telegram_message(message, image_path)
         final_path = os.path.join(VISITS_DIR, output_filename)
         shutil.move(image_path, final_path)
