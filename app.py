@@ -106,6 +106,11 @@ def delete(filename):
     if os.path.exists(image_path):
         os.remove(image_path)
     delete_visit(filename)
+
+    # Redirect based on where the request came from
+    referer = request.headers.get("Referer", "")
+    if "/review" in referer:
+        return redirect(url_for("review"))
     return redirect(url_for("index"))
 
 @app.route("/snap")
