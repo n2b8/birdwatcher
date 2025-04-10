@@ -7,6 +7,10 @@ import sys
 import shutil
 import requests
 
+# Debugging telegram issues
+print("TELEGRAM_BOT_TOKEN:", os.getenv("TELEGRAM_BOT_TOKEN"))
+print("TELEGRAM_CHAT_ID:", os.getenv("TELEGRAM_CHAT_ID"))
+
 # Settings
 CONFIDENCE_THRESHOLD = 0.7
 REVIEW_THRESHOLD = 0.1
