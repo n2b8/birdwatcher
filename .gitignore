@@ -2,6 +2,9 @@
 visits/*.jpg
 static/visits/*.jpg
 debug_*.jpg
+venv/
+not_a_bird/
+review/
 
 # Python cache
 *.pyc
@@ -16,3 +19,8 @@ birdenv/
 
 # macOS system file
 .DS_Store
+
+# large model files
+model/class_labels_v2.txt
+model/efficientnet_b7_nabirds.onnx
+
