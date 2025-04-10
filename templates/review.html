@@ -15,14 +15,15 @@
 <body>
   <h1>🔍 Review Uncertain Images</h1>
   <p><a href="/">← Back to Dashboard</a></p>
+
   {% for entry in entries %}
   <div class="review">
     <strong>{{ entry.species }}</strong><br>
     <span class="motion-score">Motion Score: {{ entry.motion_score }}</span><br>
-    <span class="confidence">Confidence: {{ entry.confidence }}</span></br>
+    <span class="confidence">Confidence: {{ entry.confidence }}</span><br>
     <time>{{ entry.timestamp }}</time><br>
-    <a href="{{ url_for('serve_review_image', filename=entry.filename) }}" target="_blank">
-      <img src="{{ url_for('serve_review_image', filename=entry.filename) }}" alt="{{ entry.species }}">
+    <a href="{{ url_for('serve_image', filename=entry.filename) }}" target="_blank">
+      <img src="{{ url_for('serve_image', filename=entry.filename) }}" alt="{{ entry.species }}">
     </a><br>
     <form action="{{ url_for('mark_good', filename=entry.filename) }}" method="POST">
       <button type="submit">✅ Mark as Bird</button>
