@@ -21,7 +21,9 @@ def index():
     with get_connection() as conn:
         cursor = conn.execute("""
             SELECT * FROM visits
-            WHERE confidence IS NOT NULL AND confidence >= 0.7
+            WHERE confidence IS NOT NULL
+              AND confidence >= 0.7
+              AND LOWER(species) != 'not_a_bird'
             ORDER BY timestamp DESC
         """)
         rows = [dict(zip([col[0] for col in cursor.description], row)) for row in cursor.fetchall()]
@@ -33,7 +35,8 @@ def review():
     with get_connection() as conn:
         cursor = conn.execute("""
             SELECT * FROM visits
-            WHERE confidence IS NOT NULL AND confidence >= 0.1 AND confidence < 0.7
+            WHERE (confidence IS NOT NULL AND confidence >= 0.1 AND confidence < 0.7)
+               OR LOWER(species) = 'not_a_bird'
             ORDER BY timestamp DESC
         """)
         rows = [dict(zip([col[0] for col in cursor.description], row)) for row in cursor.fetchall()]
