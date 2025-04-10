@@ -90,6 +90,10 @@ def stats():
 def serve_image(filename):
     return send_from_directory(IMAGE_DIR, filename)
 
+@app.route("/thumbnails/<path:filename>")
+def serve_thumbnail(filename):
+    return send_from_directory("thumbnails", filename)
+
 @app.route("/mark_good/<filename>", methods=["POST"])
 def mark_good(filename):
     update_status(filename, "accepted")

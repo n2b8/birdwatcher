@@ -23,10 +23,10 @@
     <span class="confidence">Confidence: {{ entry.confidence }}</span><br>
     <time>{{ entry.timestamp }}</time><br>
     <a href="{{ url_for('serve_image', filename=entry.filename) }}" target="_blank">
-      <img src="{{ url_for('serve_image', filename=entry.filename) }}"
-        alt="{{ entry.species }}"
-        loading="lazy"
-        style="max-width: 200px;">
+      <img src="{{ url_for('serve_thumbnail', filename=entry.filename) }}"
+           alt="{{ entry.species }}"
+           loading="lazy"
+           style="max-width: 200px;">
     </a><br>
     <form action="{{ url_for('mark_good', filename=entry.filename) }}" method="POST">
       <button type="submit">✅ Mark as Bird</button>

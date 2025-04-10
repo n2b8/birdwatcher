@@ -87,6 +87,14 @@ def capture_and_classify(image_path, output_filename, motion_score=None):
     final_path = os.path.join(IMAGE_DIR, output_filename)
     shutil.move(image_path, final_path)
 
+    thumb_dir = "thumbnails"
+    os.makedirs(thumb_dir, exist_ok=True)
+    thumb_path = os.path.join(thumb_dir, output_filename)
+
+    with Image.open(final_path) as img:
+        img.thumbnail((300, 169))
+        img.save(thumb_path)
+
     # Save metadata to DB
     add_visit(
         filename=output_filename,
