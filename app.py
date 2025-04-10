@@ -5,10 +5,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from db import (
-    get_visits_by_status,
+    get_connection,
     update_status,
     delete_visit,
-    get_not_a_bird_count
+    get_not_a_bird_count,
+    add_visit,
 )
 
 app = Flask(__name__)
@@ -17,22 +18,37 @@ os.makedirs(IMAGE_DIR, exist_ok=True)
 
 @app.route("/")
 def index():
-    entries = get_visits_by_status("accepted")
+    with get_connection() as conn:
+        rows = conn.execute("""
+            SELECT * FROM visits
+            WHERE confidence IS NOT NULL AND confidence >= 0.7
+            ORDER BY timestamp DESC
+        """).fetchall()
     not_a_bird_count = get_not_a_bird_count()
-    return render_template("index.html", entries=entries, not_a_bird_count=not_a_bird_count)
+    return render_template("index.html", entries=rows, not_a_bird_count=not_a_bird_count)
 
 @app.route("/review")
 def review():
-    entries = get_visits_by_status("review")
-    return render_template("review.html", entries=entries)
+    with get_connection() as conn:
+        rows = conn.execute("""
+            SELECT * FROM visits
+            WHERE confidence IS NOT NULL AND confidence >= 0.1 AND confidence < 0.7
+            ORDER BY timestamp DESC
+        """).fetchall()
+    return render_template("review.html", entries=rows)
 
 @app.route("/stats")
 def stats():
-    entries = get_visits_by_status("accepted")
-    if not entries:
+    with get_connection() as conn:
+        rows = conn.execute("""
+            SELECT * FROM visits
+            WHERE confidence IS NOT NULL AND confidence >= 0.7
+        """).fetchall()
+
+    if not rows:
         return "No data available yet."
 
-    df = pd.DataFrame(entries, columns=["id", "filename", "timestamp", "species", "confidence", "motion_score", "status"])
+    df = pd.DataFrame(rows, columns=["id", "filename", "timestamp", "species", "confidence", "motion_score", "status"])
     df["timestamp"] = pd.to_datetime(df["timestamp"])
 
     # Top 10 bar chart
@@ -99,8 +115,7 @@ def snap():
 
     os.rename(temp_path, final_path)
 
-    # Optional: insert manual snapshot metadata into DB
-    from db import add_visit
+    # Save to DB
     add_visit(
         filename=filename,
         timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),

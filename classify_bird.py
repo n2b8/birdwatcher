@@ -72,13 +72,10 @@ def capture_and_classify(image_path, output_filename, motion_score=None):
 
     print(f"Predicted: {species} ({confidence:.2f})")
 
-    # Decide classification status
+    # Determine status by confidence only
     if confidence >= CONFIDENCE_THRESHOLD:
-        if species.lower() == "not_a_bird":
-            status = "not_a_bird"
-        else:
-            status = "accepted"
-            send_telegram_message(f"A {species} has just visited your feeder!", image_path)
+        status = "accepted"
+        send_telegram_message(f"A {species} has just visited your feeder!", image_path)
     elif confidence >= REVIEW_THRESHOLD:
         status = "review"
     else:
@@ -86,11 +83,11 @@ def capture_and_classify(image_path, output_filename, motion_score=None):
         os.remove(image_path)
         return "discarded"
 
-    # Move image to IMAGE_DIR
+    # Move image to storage
     final_path = os.path.join(IMAGE_DIR, output_filename)
     shutil.move(image_path, final_path)
 
-    # Log to SQLite
+    # Save metadata to DB
     add_visit(
         filename=output_filename,
         timestamp=timestamp,
