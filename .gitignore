@@ -3,11 +3,15 @@ visits/*.jpg
 static/visits/*.jpg
 debug_*.jpg
 
+# db to ignore
+birdwatcher.db
+
 # folders to ignroe
 venv/
 not_a_bird/
 review/
 visits/
+images/
 
 # Python cache
 *.pyc
