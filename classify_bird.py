@@ -43,7 +43,7 @@ def send_telegram_message(message, image_path=None):
         requests.post(url, data=payload)
 
 def preprocess_image(image_path):
-    img = Image.open(image_path).convert("RGB").resize((224, 224))
+    img = Image.open(image_path).convert("RGB").resize((600, 600))
     arr = np.array(img).astype(np.float32) / 255.0
     arr = (arr - [0.485, 0.456, 0.406]) / [0.229, 0.224, 0.225]
     arr = np.transpose(arr, (2, 0, 1))[np.newaxis, :]
