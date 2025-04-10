@@ -1,7 +1,8 @@
-# Ignore all JPG visit images
+# Ignore all images
 visits/*.jpg
 static/visits/*.jpg
 debug_*.jpg
+static/*.png
 
 # db to ignore
 birdwatcher.db
