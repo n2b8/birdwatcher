@@ -8,7 +8,8 @@ import shutil
 import requests
 
 # Settings
-CONFIDENCE_THRESHOLD = 0.7  # Adjust as needed
+CONFIDENCE_THRESHOLD = 0.7
+REVIEW_THRESHOLD = 0.1
 TMP_DIR = "/tmp"
 REVIEW_DIR = "review"
 VISITS_DIR = "visits"
@@ -63,11 +64,10 @@ def capture_and_classify(image_path, output_filename, motion_score=None):
 
     print(f"Predicted: {species} ({confidence:.2f})")
 
+    # High confidence: save and notify
     if confidence >= CONFIDENCE_THRESHOLD:
         message = f"New Bird Detected!\nSpecies: {species}\nConfidence: {confidence:.2f}\nMotion Score: {motion_score}\nTimestamp: {timestamp}"
         send_telegram_message(message, image_path)
-
-    if confidence >= CONFIDENCE_THRESHOLD:
         final_path = os.path.join(VISITS_DIR, output_filename)
         shutil.move(image_path, final_path)
         with open(LOG_FILE, "a", newline="") as f:
@@ -75,7 +75,9 @@ def capture_and_classify(image_path, output_filename, motion_score=None):
                 f.write("filename,species,confidence,motion_score,timestamp\n")
             f.write(f"{output_filename},{species},{confidence:.2f},{motion_score},{timestamp}\n")
         return "accepted"
-    else:
+
+    # Medium confidence: review
+    elif confidence >= REVIEW_THRESHOLD:
         final_path = os.path.join(REVIEW_DIR, output_filename)
         shutil.move(image_path, final_path)
         with open(REVIEW_LOG, "a", newline="") as f:
@@ -83,6 +85,12 @@ def capture_and_classify(image_path, output_filename, motion_score=None):
                 f.write("filename,species,confidence,motion_score,timestamp\n")
             f.write(f"{output_filename},{species},{confidence:.2f},{motion_score},{timestamp}\n")
         return "review"
+
+    # Low confidence: discard
+    else:
+        print("[INFO] Confidence too low, discarding image.")
+        os.remove(image_path)
+        return "discarded"
 
 if __name__ == "__main__":
     if len(sys.argv) < 4:
