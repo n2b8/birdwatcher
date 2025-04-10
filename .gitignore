@@ -2,9 +2,12 @@
 visits/*.jpg
 static/visits/*.jpg
 debug_*.jpg
+
+# folders to ignroe
 venv/
 not_a_bird/
 review/
+visits/
 
 # Python cache
 *.pyc
