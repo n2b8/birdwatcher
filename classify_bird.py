@@ -6,53 +6,49 @@ import os
 import sys
 import shutil
 import requests
+from db import add_visit
 
-# Debugging telegram issues
+# Telegram debug
 print("TELEGRAM_BOT_TOKEN:", os.getenv("TELEGRAM_BOT_TOKEN"))
 print("TELEGRAM_CHAT_ID:", os.getenv("TELEGRAM_CHAT_ID"))
 
 # Settings
 CONFIDENCE_THRESHOLD = 0.7
 REVIEW_THRESHOLD = 0.1
-TMP_DIR = "/tmp"
-REVIEW_DIR = "review"
-VISITS_DIR = "visits"
-LOG_FILE = os.path.join(VISITS_DIR, "log.csv")
-REVIEW_LOG = os.path.join(REVIEW_DIR, "review_log.csv")
+IMAGE_DIR = "images"
+MODEL_PATH = "model/efficientnet_b7_nabirds.onnx"
+LABELS_PATH = "model/class_labels_v2.txt"
 
-# Telegram Settings
+# Telegram settings
 TELEGRAM_API_KEY = os.getenv("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
-# Load model
-session = ort.InferenceSession("model/efficientnet_b7_nabirds.onnx")
+# Load model and labels
+session = ort.InferenceSession(MODEL_PATH)
 input_name = session.get_inputs()[0].name
 
-# Load class labels
-with open("model/class_labels_v2.txt") as f:
+with open(LABELS_PATH) as f:
     class_labels = [line.strip() for line in f]
 
-# Ensure necessary folders exist
-os.makedirs(VISITS_DIR, exist_ok=True)
-os.makedirs(REVIEW_DIR, exist_ok=True)
+# Ensure image folder exists
+os.makedirs(IMAGE_DIR, exist_ok=True)
 
 def send_telegram_message(message, image_path=None):
     if image_path:
-        # Use the sendPhoto method with caption
         url = f"https://api.telegram.org/bot{TELEGRAM_API_KEY}/sendPhoto"
-        payload = {'chat_id': CHAT_ID, 'caption': message}  # using 'caption' instead of 'text'
+        payload = {'chat_id': CHAT_ID, 'caption': message}
         with open(image_path, 'rb') as photo:
             files = {'photo': photo}
             response = requests.post(url, data=payload, files=files)
-            print("Telegram sendPhoto response:", response.status_code, response.text)
     else:
         url = f"https://api.telegram.org/bot{TELEGRAM_API_KEY}/sendMessage"
         payload = {'chat_id': CHAT_ID, 'text': message}
         response = requests.post(url, data=payload)
-        print("Telegram sendMessage response:", response.status_code, response.text)
-        
+
     if response.status_code != 200:
-        print(f"[ERROR] Telegram API returned status code {response.status_code}: {response.text}")
+        print(f"[ERROR] Telegram API returned status {response.status_code}: {response.text}")
+    else:
+        print("✅ Telegram notification sent.")
 
 def preprocess_image(image_path):
     img = Image.open(image_path).convert("RGB").resize((600, 600))
@@ -76,44 +72,36 @@ def capture_and_classify(image_path, output_filename, motion_score=None):
 
     print(f"Predicted: {species} ({confidence:.2f})")
 
-    # High confidence branch:
+    # Decide classification status
     if confidence >= CONFIDENCE_THRESHOLD:
-        # If prediction is "not_a_bird", move to review folder instead of visits
         if species.lower() == "not_a_bird":
-            final_path = os.path.join(REVIEW_DIR, output_filename)
-            shutil.move(image_path, final_path)
-            with open(REVIEW_LOG, "a", newline="") as f:
-                if os.stat(REVIEW_LOG).st_size == 0:
-                    f.write("filename,species,confidence,motion_score,timestamp\n")
-                f.write(f"{output_filename},{species},{confidence:.2f},{motion_score},{timestamp}\n")
-            return "review"
+            status = "not_a_bird"
         else:
-            # Accept the image and notify if it's a bird.
-            message = f"A {species} has just visited your feeder!"
-            send_telegram_message(message, image_path)
-            final_path = os.path.join(VISITS_DIR, output_filename)
-            shutil.move(image_path, final_path)
-            with open(LOG_FILE, "a", newline="") as f:
-                if os.stat(LOG_FILE).st_size == 0:
-                    f.write("filename,species,confidence,motion_score,timestamp\n")
-                f.write(f"{output_filename},{species},{confidence:.2f},{motion_score},{timestamp}\n")
-            return "accepted"
-
-    # Medium confidence: review
+            status = "accepted"
+            send_telegram_message(f"A {species} has just visited your feeder!", image_path)
     elif confidence >= REVIEW_THRESHOLD:
-        final_path = os.path.join(REVIEW_DIR, output_filename)
-        shutil.move(image_path, final_path)
-        with open(REVIEW_LOG, "a", newline="") as f:
-            if os.stat(REVIEW_LOG).st_size == 0:
-                f.write("filename,species,confidence,motion_score,timestamp\n")
-            f.write(f"{output_filename},{species},{confidence:.2f},{motion_score},{timestamp}\n")
-        return "review"
-
-    # Low confidence: discard
+        status = "review"
     else:
         print("[INFO] Confidence too low, discarding image.")
         os.remove(image_path)
         return "discarded"
+
+    # Move image to IMAGE_DIR
+    final_path = os.path.join(IMAGE_DIR, output_filename)
+    shutil.move(image_path, final_path)
+
+    # Log to SQLite
+    add_visit(
+        filename=output_filename,
+        timestamp=timestamp,
+        species=species,
+        confidence=round(float(confidence), 4),
+        motion_score=int(motion_score) if motion_score else None,
+        status=status
+    )
+
+    print(f"[DB] Stored {output_filename} as {status}")
+    return status
 
 if __name__ == "__main__":
     if len(sys.argv) < 4:
