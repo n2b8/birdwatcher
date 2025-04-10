@@ -24,7 +24,10 @@
     <strong>{{ entry.species }}</strong><br>
     <time>{{ entry.timestamp }}</time><br>
     <a href="{{ url_for('serve_image', filename=entry.filename) }}" target="_blank">
-      <img src="{{ url_for('serve_image', filename=entry.filename) }}" alt="{{ entry.species }}">
+      <img src="{{ url_for('serve_image', filename=entry.filename) }}"
+        alt="{{ entry.species }}"
+        loading="lazy"
+        style="max-width: 200px;">
     </a><br>
     <form action="{{ url_for('delete', filename=entry.filename) }}" method="POST">
       <button type="submit">🗑️ Delete</button>
