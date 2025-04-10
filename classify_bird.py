@@ -21,11 +21,11 @@ TELEGRAM_API_KEY = os.getenv("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
 # Load model
-session = ort.InferenceSession("model/efficientnet_b0_nabirds.onnx")
+session = ort.InferenceSession("model/efficientnet_b7_nabirds.onnx")
 input_name = session.get_inputs()[0].name
 
 # Load class labels
-with open("model/class_labels.txt") as f:
+with open("model/class_labels_v2.txt") as f:
     class_labels = [line.strip() for line in f]
 
 # Ensure necessary folders exist
