@@ -63,9 +63,32 @@ def monitor_yolo():
 
     try:
         for line in process.stdout:
-            print("[YOLO]", line.strip())  # <-- See every line
-            if "bird" in line.lower():
-                ...
+            line = line.strip()
+
+            # Show only detection lines
+            if "object:" in line.lower():
+                print("[DETECTION]", line)
+
+            # Trigger on bird only
+            if "object:" in line.lower() and "bird" in line.lower():
+                print("[DETECTED BIRD]", line)
+
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                source_path = "captured_birds/latest.jpg"
+                raw_path = f"{CAPTURE_DIR}/raw_{timestamp}.jpg"
+                final_filename = f"bird_{timestamp}.jpg"
+
+                # Save detection to log file
+                with open("detection_log.txt", "a") as log_file:
+                    log_file.write(f"{timestamp} - {line}\n")
+
+                if os.path.exists(source_path):
+                    os.rename(source_path, raw_path)
+                    classify_bird(raw_path, final_filename)
+                else:
+                    print("[WARN] Detected bird but no image found to classify.")
+
+                time.sleep(3)  # Throttle detection frequency
     except KeyboardInterrupt:
         print("[INFO] Stopping YOLO monitor...")
         process.terminate()
