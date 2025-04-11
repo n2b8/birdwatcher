@@ -1,14 +1,8 @@
 import time
 import os
+import sys
 import subprocess
 from db import get_connection
-
-# ---- TEMP
-import os
-print("[DEBUG] ENVIRONMENT DUMP:")
-for k, v in os.environ.items():
-    print(f"{k}={v}")
-# --- TEMP
 
 CLASSIFY_INTERVAL = 60  # seconds
 
@@ -34,17 +28,22 @@ def classify_image(filename):
     path = os.path.join("images", filename)
     if not os.path.exists(path):
         print(f"[WARN] Image {filename} not found.")
-        mark_classified(filename)  # skip it
+        mark_classified(filename)
         return
 
     print(f"[CLASSIFY] Processing {filename}")
-    subprocess.run([
-        os.path.join(os.environ["VIRTUAL_ENV"], "bin", "python"),
+
+    env = os.environ.copy()
+    result = subprocess.run([
+        sys.executable,
         "classify_bird.py",
         path,
         filename,
         "1000"
-    ])
+    ], env=env)
+
+    if result.returncode != 0:
+        print(f"[INFO] Classification script exited with code {result.returncode}")
     mark_classified(filename)
 
 def classify_loop():
