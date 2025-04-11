@@ -24,10 +24,17 @@ def capture_frame(raw_path):
         "--width", "1280",
         "--height", "720"
     ]
-    subprocess.run(cmd)
+    result = subprocess.run(cmd)
+    if result.returncode != 0 or not os.path.exists(raw_path):
+        print(f"[ERROR] Failed to capture image at {raw_path}")
+        return None
     print(f"[INFO] Frame captured: {raw_path}")
+    return raw_path
 
 def classify_bird(raw_path, filename, motion_score=1000):
+    if not raw_path:
+        print("[WARN] No image to classify.")
+        return
     cmd = [
         "python3",
         "classify_bird.py",
@@ -54,11 +61,11 @@ def monitor_yolo():
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 raw_path = f"{CAPTURE_DIR}/raw_{timestamp}.jpg"
                 final_filename = f"bird_{timestamp}.jpg"
-                capture_frame(raw_path)
+                raw_path = capture_frame(raw_path)
                 classify_bird(raw_path, final_filename)
                 time.sleep(3)  # throttle detections
     except KeyboardInterrupt:
-        print("[INFO] Stopping...")
+        print("[INFO] Stopping YOLO monitor...")
         process.terminate()
 
 if __name__ == "__main__":
