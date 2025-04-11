@@ -55,7 +55,7 @@ def review():
     with get_connection() as conn:
         cursor = conn.execute("""
             SELECT * FROM visits
-            WHERE status IN ('review', 'not_a_bird')
+            WHERE status IN ('review', 'not_a_bird') AND classified = 1
             ORDER BY timestamp DESC
             LIMIT ? OFFSET ?
         """, (per_page, offset))
@@ -63,7 +63,7 @@ def review():
 
         cursor = conn.execute("""
             SELECT COUNT(*) FROM visits
-            WHERE status IN ('review', 'not_a_bird')
+            WHERE status IN ('review', 'not_a_bird') AND classified = 1
         """)
         total_count = cursor.fetchone()[0]
 
