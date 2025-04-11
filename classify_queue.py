@@ -39,7 +39,8 @@ def classify_image(filename):
 
     print(f"[CLASSIFY] Processing {filename}")
     subprocess.run([
-        "python3", "classify_bird.py",
+        os.path.join(os.environ["VIRTUAL_ENV"], "bin", "python"),
+        "classify_bird.py",
         path,
         filename,
         "1000"
