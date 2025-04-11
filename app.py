@@ -25,8 +25,7 @@ def index():
     with get_connection() as conn:
         cursor = conn.execute("""
             SELECT * FROM visits
-            WHERE confidence IS NOT NULL
-              AND confidence >= 0.7
+            WHERE status = 'accepted'
               AND LOWER(species) != 'not_a_bird'
             ORDER BY timestamp DESC
             LIMIT ? OFFSET ?
@@ -35,8 +34,7 @@ def index():
 
         cursor = conn.execute("""
             SELECT COUNT(*) FROM visits
-            WHERE confidence IS NOT NULL
-              AND confidence >= 0.7
+            WHERE status = 'accepted'
               AND LOWER(species) != 'not_a_bird'
         """)
         total_count = cursor.fetchone()[0]
