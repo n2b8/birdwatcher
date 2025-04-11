@@ -57,8 +57,7 @@ def review():
     with get_connection() as conn:
         cursor = conn.execute("""
             SELECT * FROM visits
-            WHERE (confidence IS NOT NULL AND confidence >= 0.1 AND confidence < 0.7)
-               OR LOWER(species) = 'not_a_bird'
+            WHERE status IN ('review', 'not_a_bird')
             ORDER BY timestamp DESC
             LIMIT ? OFFSET ?
         """, (per_page, offset))
@@ -66,8 +65,7 @@ def review():
 
         cursor = conn.execute("""
             SELECT COUNT(*) FROM visits
-            WHERE (confidence IS NOT NULL AND confidence >= 0.1 AND confidence < 0.7)
-               OR LOWER(species) = 'not_a_bird'
+            WHERE status IN ('review', 'not_a_bird')
         """)
         total_count = cursor.fetchone()[0]
 
