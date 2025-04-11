@@ -47,8 +47,8 @@ def classify_bird(raw_path, filename, motion_score=1000):
 def monitor_yolo():
     print("[INFO] Starting YOLOv8 monitor...")
 
-    # Update DETECTION_CMD to include output
     DETECTION_CMD_WITH_OUTPUT = DETECTION_CMD + ["--output", "captured_birds/latest.jpg"]
+    print("[DEBUG] Full detection command:", " ".join(DETECTION_CMD_WITH_OUTPUT))
 
     process = subprocess.Popen(
         DETECTION_CMD_WITH_OUTPUT,
@@ -57,22 +57,15 @@ def monitor_yolo():
         text=True
     )
 
+    if process.stdout is None:
+        print("[ERROR] Failed to open rpicam-hello process.")
+        return
+
     try:
         for line in process.stdout:
-            line = line.strip()
+            print("[YOLO]", line.strip())  # <-- See every line
             if "bird" in line.lower():
-                print(f"[DETECTED] {line}")
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                source_path = "captured_birds/latest.jpg"
-                raw_path = f"{CAPTURE_DIR}/raw_{timestamp}.jpg"
-                final_filename = f"bird_{timestamp}.jpg"
-
-                if os.path.exists(source_path):
-                    os.rename(source_path, raw_path)
-                    classify_bird(raw_path, final_filename)
-                else:
-                    print("[WARN] Detected bird but no image found to classify.")
-                time.sleep(3)  # throttle detections
+                ...
     except KeyboardInterrupt:
         print("[INFO] Stopping YOLO monitor...")
         process.terminate()
