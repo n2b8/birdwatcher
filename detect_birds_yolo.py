@@ -2,8 +2,13 @@ import subprocess
 import time
 import os
 from datetime import datetime
+from db import add_visit
 
-# ==== YOLOv8 Detection Config ====
+# ==== Paths ====
+CAPTURE_DIR = "images"
+os.makedirs(CAPTURE_DIR, exist_ok=True)
+
+# ==== Detection Config ====
 DETECTION_CMD = [
     "rpicam-hello",
     "-t", "0",
@@ -12,83 +17,79 @@ DETECTION_CMD = [
     "-n"
 ]
 
-# ==== Paths ====
-CAPTURE_DIR = "captured_birds"
-os.makedirs(CAPTURE_DIR, exist_ok=True)
+CONFIDENCE_THRESHOLD = 0.6
+COOLDOWN_SECONDS = 10
 
-def capture_frame(raw_path):
-    cmd = [
+def capture_frame(path):
+    result = subprocess.run([
         "libcamera-still",
-        "-o", raw_path,
+        "-o", path,
         "-n",
         "--width", "1280",
         "--height", "720"
-    ]
-    result = subprocess.run(cmd)
-    if result.returncode != 0 or not os.path.exists(raw_path):
-        print(f"[ERROR] Failed to capture image at {raw_path}")
-        return None
-    print(f"[INFO] Frame captured: {raw_path}")
-    return raw_path
-
-def classify_bird(raw_path, filename, motion_score=1000):
-    if not raw_path:
-        print("[WARN] No image to classify.")
-        return
-    cmd = [
-        "python3",
-        "classify_bird.py",
-        raw_path,
-        filename,
-        str(motion_score)
-    ]
-    subprocess.run(cmd)
+    ])
+    return result.returncode == 0 and os.path.exists(path)
 
 def monitor_yolo():
-    print("[INFO] Starting YOLOv8 monitor...")
+    print("[INFO] Starting YOLOv8 bird monitor loop...")
 
-    DETECTION_CMD_WITH_OUTPUT = DETECTION_CMD  # <-- Removed --output
-    print("[DEBUG] Full detection command:", " ".join(DETECTION_CMD_WITH_OUTPUT))
+    while True:
+        print("[INFO] Launching rpicam-hello...")
+        process = subprocess.Popen(
+            DETECTION_CMD,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True
+        )
 
-    process = subprocess.Popen(
-        DETECTION_CMD_WITH_OUTPUT,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True
-    )
+        try:
+            for line in process.stdout:
+                line = line.strip()
 
-    if process.stdout is None:
-        print("[ERROR] Failed to open rpicam-hello process.")
-        return
+                if "object:" in line.lower():
+                    print("[DETECTION]", line)
 
-    try:
-        for line in process.stdout:
-            line = line.strip()
+                # Extract bird detection
+                if "object:" in line.lower() and "bird" in line.lower():
+                    try:
+                        confidence = float(line.split("(")[-1].split(")")[0])
+                        if confidence < CONFIDENCE_THRESHOLD:
+                            continue
+                    except Exception:
+                        continue
 
-            # Show only detection lines
-            if "object:" in line.lower():
-                print("[DETECTION]", line)
+                    print("[DETECTED BIRD]", line)
+                    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    filename = f"bird_{timestamp.replace(':','').replace(' ', '_')}.jpg"
+                    filepath = os.path.join(CAPTURE_DIR, filename)
 
-            # Trigger on bird only
-            if "object:" in line.lower() and "bird" in line.lower():
-                print("[DETECTED BIRD]", line)
+                    # Kill detection process
+                    process.terminate()
+                    process.wait()
+                    print("[INFO] YOLO detection stopped for still capture.")
 
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                raw_path = f"{CAPTURE_DIR}/raw_{timestamp}.jpg"
-                final_filename = f"bird_{timestamp}.jpg"
+                    if capture_frame(filepath):
+                        print(f"[CAPTURED] {filename}")
+                        add_visit(
+                            filename=filename,
+                            timestamp=timestamp,
+                            species=None,
+                            confidence=confidence,
+                            motion_score=None,
+                            status="review",
+                            classified=False
+                        )
+                    else:
+                        print("[ERROR] Failed to capture image.")
 
-                # Save detection to log file
-                with open("detection_log.txt", "a") as log_file:
-                    log_file.write(f"{timestamp} - {line}\n")
+                    print(f"[WAIT] Cooling down for {COOLDOWN_SECONDS} seconds...\n")
+                    time.sleep(COOLDOWN_SECONDS)
+                    break  # restart loop after cooldown
 
-                # Capture a fresh image
-                raw_path = capture_frame(raw_path)
-                classify_bird(raw_path, final_filename)
-
-                time.sleep(3)  # Throttle detection frequency
-    except KeyboardInterrupt:
-        print("[INFO] Stopping YOLO monitor...")
-        process.terminate()
+        except KeyboardInterrupt:
+            print("[INFO] Shutting down bird detector.")
+            process.terminate()
+            break
 
 if __name__ == "__main__":
     monitor_yolo()
