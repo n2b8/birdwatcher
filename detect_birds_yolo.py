@@ -69,3 +69,7 @@ def monitor_yolo():
     except KeyboardInterrupt:
         print("[INFO] Stopping YOLO monitor...")
         process.terminate()
+
+if __name__ == "__main__":
+    monitor_yolo()
+
