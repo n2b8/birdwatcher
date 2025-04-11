@@ -73,22 +73,22 @@ def capture_and_classify(image_path, output_filename, motion_score=None):
     print(f"Predicted: {species} ({confidence:.2f})")
     normalized_species = species.strip().lower().replace(" ", "_")
 
-    # Immediately discard any "not_a_bird"
     if normalized_species == "not_a_bird":
         print("[INFO] 'not_a_bird' detected — discarding image.")
         os.remove(image_path)
-        return "discarded"
+        sys.exit(2)
 
-    # Determine classification status
-    if confidence >= CONFIDENCE_THRESHOLD:
-        status = "accepted"
-        send_telegram_message(f"A {species} has just visited your feeder!", image_path)
-    elif confidence >= REVIEW_THRESHOLD:
-        status = "review"
-    else:
+    if confidence < REVIEW_THRESHOLD:
         print("[INFO] Confidence too low, discarding image.")
         os.remove(image_path)
-        return "discarded"
+        sys.exit(2)
+
+    # Determine classification status
+    status = "accepted" if confidence >= CONFIDENCE_THRESHOLD else "review"
+
+    # Notify if accepted
+    if status == "accepted":
+        send_telegram_message(f"A {species} has just visited your feeder!", image_path)
 
     # Move image to storage
     final_path = os.path.join(IMAGE_DIR, output_filename)

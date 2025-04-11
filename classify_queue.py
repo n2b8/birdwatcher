@@ -2,7 +2,7 @@ import time
 import os
 import sys
 import subprocess
-from db import get_connection
+from db import get_connection, delete_visit
 
 CLASSIFY_INTERVAL = 60  # seconds
 
@@ -28,23 +28,26 @@ def classify_image(filename):
     path = os.path.join("images", filename)
     if not os.path.exists(path):
         print(f"[WARN] Image {filename} not found.")
-        mark_classified(filename)
+        mark_classified(filename)  # skip it
         return
 
     print(f"[CLASSIFY] Processing {filename}")
-
-    env = os.environ.copy()
     result = subprocess.run([
-        sys.executable,
-        "classify_bird.py",
+        "python3", "classify_bird.py",
         path,
         filename,
         "1000"
-    ], env=env)
+    ])
 
-    if result.returncode != 0:
-        print(f"[INFO] Classification script exited with code {result.returncode}")
-    mark_classified(filename)
+    if result.returncode == 2:  # special return code for discarded
+        print(f"[CLEANUP] '{filename}' was not a bird — removing visit entry.")
+        delete_visit(filename)
+        try:
+            os.remove(path)
+        except FileNotFoundError:
+            pass
+    else:
+        mark_classified(filename)
 
 def classify_loop():
     print("[INFO] Starting classification queue loop...")
