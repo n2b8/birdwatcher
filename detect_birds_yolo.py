@@ -16,6 +16,21 @@ DETECTION_CMD = [
 CAPTURE_DIR = "captured_birds"
 os.makedirs(CAPTURE_DIR, exist_ok=True)
 
+def capture_frame(raw_path):
+    cmd = [
+        "libcamera-still",
+        "-o", raw_path,
+        "-n",
+        "--width", "1280",
+        "--height", "720"
+    ]
+    result = subprocess.run(cmd)
+    if result.returncode != 0 or not os.path.exists(raw_path):
+        print(f"[ERROR] Failed to capture image at {raw_path}")
+        return None
+    print(f"[INFO] Frame captured: {raw_path}")
+    return raw_path
+
 def classify_bird(raw_path, filename, motion_score=1000):
     if not raw_path:
         print("[WARN] No image to classify.")
@@ -32,7 +47,7 @@ def classify_bird(raw_path, filename, motion_score=1000):
 def monitor_yolo():
     print("[INFO] Starting YOLOv8 monitor...")
 
-    DETECTION_CMD_WITH_OUTPUT = DETECTION_CMD + ["--output", "captured_birds/latest.jpg"]
+    DETECTION_CMD_WITH_OUTPUT = DETECTION_CMD  # <-- Removed --output
     print("[DEBUG] Full detection command:", " ".join(DETECTION_CMD_WITH_OUTPUT))
 
     process = subprocess.Popen(
@@ -59,7 +74,6 @@ def monitor_yolo():
                 print("[DETECTED BIRD]", line)
 
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                source_path = "captured_birds/latest.jpg"
                 raw_path = f"{CAPTURE_DIR}/raw_{timestamp}.jpg"
                 final_filename = f"bird_{timestamp}.jpg"
 
@@ -67,18 +81,9 @@ def monitor_yolo():
                 with open("detection_log.txt", "a") as log_file:
                     log_file.write(f"{timestamp} - {line}\n")
 
-                # Try to capture latest.jpg (wait up to 0.5s)
-                if os.path.exists(source_path):
-                    os.rename(source_path, raw_path)
-                    classify_bird(raw_path, final_filename)
-                else:
-                    print("[WARN] latest.jpg not found — waiting briefly...")
-                    time.sleep(0.5)
-                    if os.path.exists(source_path):
-                        os.rename(source_path, raw_path)
-                        classify_bird(raw_path, final_filename)
-                    else:
-                        print("[ERROR] Still no image found — skipping this detection.")
+                # Capture a fresh image
+                raw_path = capture_frame(raw_path)
+                classify_bird(raw_path, final_filename)
 
                 time.sleep(3)  # Throttle detection frequency
     except KeyboardInterrupt:
