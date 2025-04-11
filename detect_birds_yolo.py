@@ -46,8 +46,12 @@ def classify_bird(raw_path, filename, motion_score=1000):
 
 def monitor_yolo():
     print("[INFO] Starting YOLOv8 monitor...")
+
+    # Update DETECTION_CMD to include output
+    DETECTION_CMD_WITH_OUTPUT = DETECTION_CMD + ["--output", "captured_birds/latest.jpg"]
+
     process = subprocess.Popen(
-        DETECTION_CMD,
+        DETECTION_CMD_WITH_OUTPUT,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True
@@ -59,14 +63,16 @@ def monitor_yolo():
             if "bird" in line.lower():
                 print(f"[DETECTED] {line}")
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                source_path = "captured_birds/latest.jpg"
                 raw_path = f"{CAPTURE_DIR}/raw_{timestamp}.jpg"
                 final_filename = f"bird_{timestamp}.jpg"
-                raw_path = capture_frame(raw_path)
-                classify_bird(raw_path, final_filename)
+
+                if os.path.exists(source_path):
+                    os.rename(source_path, raw_path)
+                    classify_bird(raw_path, final_filename)
+                else:
+                    print("[WARN] Detected bird but no image found to classify.")
                 time.sleep(3)  # throttle detections
     except KeyboardInterrupt:
         print("[INFO] Stopping YOLO monitor...")
         process.terminate()
-
-if __name__ == "__main__":
-    monitor_yolo()
