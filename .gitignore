@@ -3,6 +3,7 @@ visits/*.jpg
 static/visits/*.jpg
 debug_*.jpg
 static/*.png
+thumbnails/*.jpg
 
 # db to ignore
 birdwatcher.db
