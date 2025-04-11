@@ -3,6 +3,13 @@ import os
 import subprocess
 from db import get_connection
 
+# ---- TEMP
+import os
+print("[DEBUG] ENVIRONMENT DUMP:")
+for k, v in os.environ.items():
+    print(f"{k}={v}")
+# --- TEMP
+
 CLASSIFY_INTERVAL = 60  # seconds
 
 def get_oldest_unclassified():
