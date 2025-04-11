@@ -71,15 +71,18 @@ def capture_and_classify(image_path, output_filename, motion_score=None):
     species = class_labels[prediction]
 
     print(f"Predicted: {species} ({confidence:.2f})")
+    normalized_species = species.strip().lower().replace(" ", "_")
 
-    # Determine status by confidence only
+    # Immediately discard any "not_a_bird"
+    if normalized_species == "not_a_bird":
+        print("[INFO] 'not_a_bird' detected — discarding image.")
+        os.remove(image_path)
+        return "discarded"
+
+    # Determine classification status
     if confidence >= CONFIDENCE_THRESHOLD:
-        normalized_species = species.strip().lower().replace(" ", "_")
         status = "accepted"
-        if normalized_species != "not_a_bird":
-            send_telegram_message(f"A {species} has just visited your feeder!", image_path)
-        else:
-            print("[INFO] High-confidence 'not_a_bird' - no Telegram alert sent.")
+        send_telegram_message(f"A {species} has just visited your feeder!", image_path)
     elif confidence >= REVIEW_THRESHOLD:
         status = "review"
     else:
@@ -91,15 +94,15 @@ def capture_and_classify(image_path, output_filename, motion_score=None):
     final_path = os.path.join(IMAGE_DIR, output_filename)
     shutil.move(image_path, final_path)
 
+    # Create thumbnail
     thumb_dir = "thumbnails"
     os.makedirs(thumb_dir, exist_ok=True)
     thumb_path = os.path.join(thumb_dir, output_filename)
-
     with Image.open(final_path) as img:
         img.thumbnail((300, 169))
         img.save(thumb_path)
 
-    # Save metadata to DB
+    # Log to database
     add_visit(
         filename=output_filename,
         timestamp=timestamp,
