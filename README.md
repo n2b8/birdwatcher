@@ -8,7 +8,7 @@ A Raspberry Pi-powered bird identification system using real-time YOLO object de
 
 - 🦾 **YOLOv8 (Hailo)** real-time bird detection using `rpicam-hello`
 - 📷 High-quality still capture on detection
-- 🧠 EfficientNet-B7 classification (ONNX model, NABirds-trained)
+- 🧠 Custom EfficientNet-B7 classification (ONNX model, trained on a subset of the [NABirds dataset](https://dl.allaboutbirds.org/nabirds))
 - 🗂️ Images + metadata stored in SQLite (`visits` table)
 - 🔍 Review interface for uncertain predictions
 - 📊 Species frequency charts + time-based heatmap
