@@ -74,8 +74,12 @@ def capture_and_classify(image_path, output_filename, motion_score=None):
 
     # Determine status by confidence only
     if confidence >= CONFIDENCE_THRESHOLD:
+        normalized_species = species.strip().lower().replace(" ", "_")
         status = "accepted"
-        send_telegram_message(f"A {species} has just visited your feeder!", image_path)
+        if normalized_species != "not_a_bird":
+            send_telegram_message(f"A {species} has just visited your feeder!", image_path)
+        else:
+            print("[INFO] High-confidence 'not_a_bird' - no Telegram alert sent.")
     elif confidence >= REVIEW_THRESHOLD:
         status = "review"
     else:
