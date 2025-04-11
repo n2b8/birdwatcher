@@ -1,17 +1,19 @@
 # Birdwatcher 🐦📸
 
-A Raspberry Pi-powered bird identification system that detects motion, captures images, classifies bird species using a custom-trained EfficientNet model, and logs visits through a simple web interface.
+A Raspberry Pi-powered bird identification system using real-time YOLO object detection and EfficientNet-based species classification. Detects birds with hardware acceleration, logs visits with metadata to SQLite, and provides a responsive web interface for viewing and stats.
 
 ---
 
 ## Features
 
-- 📷 Motion-triggered image capture using `libcamera-still`
-- 🧠 ONNX-based bird species classification (NABirds dataset)
-- 🐦 Review interface for low-confidence predictions
-- 🚫 "Not a Bird" tagging for model improvement
-- 📊 Species frequency stats and visit heatmaps
-- 📡 Telegram notifications for each bird visit
+- 🦾 **YOLOv8 (Hailo)** real-time bird detection using `rpicam-hello`
+- 📷 High-quality still capture on detection
+- 🧠 EfficientNet-B7 classification (ONNX model, NABirds-trained)
+- 🗂️ Images + metadata stored in SQLite (`visits` table)
+- 🔍 Review interface for uncertain predictions
+- 📊 Species frequency charts + time-based heatmap
+- 📡 Telegram notifications on high-confidence visits
+- 🛠️ systemd services for background classification & detection
 
 ---
 
@@ -19,23 +21,23 @@ A Raspberry Pi-powered bird identification system that detects motion, captures 
 
 ```
 .
-├── app.py                   # Flask web dashboard
-├── classify_bird.py         # ONNX bird classification script
-├── detect_motion.py         # Motion detection & capture
-├── reclassify_visits.py     # Batch reclassification script
-├── send_telegram.py         # Notification helper
-├── test_telegram.py         # Test script for Telegram bot
+├── app.py                     # Flask web dashboard
+├── classify_bird.py           # Classify image using ONNX model
+├── classify_queue.py          # Background classification queue processor
+├── detect_birds_yolo.py       # YOLOv8 Hailo detection loop (rpicam-hello)
+├── db.py                      # SQLite connection + visit helpers
+├── send_telegram.py           # Telegram notification module
+├── test_telegram.py           # Test bot integration
 ├── model/
-│   ├── class_labels.txt
-│   └── efficientnet_b0_nabirds.onnx
-├── visits/                  # Accepted bird photos + log.csv
-├── review/                  # Medium-confidence images + review_log.csv
-├── not_a_bird/              # Rejected/tagged images for retraining
-├── static/                  # Static assets (CSS, symbolic link to visits/)
-├── templates/
-│   ├── index.html           # Gallery dashboard
-│   ├── review.html          # Review UI
-│   └── stats.html           # Stats & charts
+│   ├── class_labels_v2.txt
+│   └── efficientnet_b7_nabirds.onnx
+├── images/                    # Accepted/candidate images
+├── thumbnails/                # Web-optimized thumbnails
+├── static/                    # Generated charts
+├── templates/                 # Flask HTML views
+│   ├── index.html
+│   ├── review.html
+│   └── stats.html
 └── .gitignore
 ```
 
@@ -45,47 +47,64 @@ A Raspberry Pi-powered bird identification system that detects motion, captures 
 
 ```bash
 # Clone the repo
-$ git clone git@github.com:n2b8/birdwatcher.git
-$ cd birdwatcher
+git clone git@github.com:n2b8/birdwatcher.git
+cd birdwatcher
 
 # Set up virtual environment
-$ python3 -m venv birdenv
-$ source birdenv/bin/activate
+python3 -m venv venv
+source venv/bin/activate
 
-# Install dependencies
-$ pip install -r requirements.txt
+# Install Python dependencies
+pip install -r requirements.txt
+```
 
-# Set environment variables
-$ export TELEGRAM_BOT_TOKEN="your-token"
-$ export TELEGRAM_CHAT_ID="your-chat-id"
+---
+
+## Environment Variables
+
+These should be provided in your systemd `.service` files or exported manually:
+
+```bash
+export TELEGRAM_BOT_TOKEN="your-bot-token"
+export TELEGRAM_CHAT_ID="your-chat-id"
 ```
 
 ---
 
 ## Systemd Services
 
-- `birdwatcher-motion.service`: runs `detect_motion.py`
-- `birdwatcher-web.service`: starts the Flask web server
+Enable and manage background tasks:
+
+### 🔍 Detection (YOLOv8 + Hailo)
+
+- `birdwatcher.motion_service.service`: runs `detect_birds_yolo.py`
+
+### 🧠 Classification Queue
+
+- `birdwatcher.classifier_service.service`: runs `classify_queue.py`
+
+### 🌐 Web Dashboard
+
+- `birdwatcher.web_service.service`: runs `app.py` via Flask
 
 ```bash
-# Restart services
-$ sudo systemctl restart birdwatcher-motion.service
-$ sudo systemctl restart birdwatcher-web.service
+sudo systemctl daemon-reload
+sudo systemctl enable birdwatcher.motion_service.service
+sudo systemctl enable birdwatcher.classifier_service.service
+sudo systemctl enable birdwatcher.web_service.service
+
+sudo systemctl start birdwatcher.motion_service.service
+sudo systemctl start birdwatcher.classifier_service.service
+sudo systemctl start birdwatcher.web_service.service
 ```
 
 ---
 
-## Retraining
+## Web Interface
 
-Use the images inside `not_a_bird/` to eventually expand your model with a "Not a Bird" class.
-
----
-
-## Future Features
-
-- 📈 Live charts (Plotly?)
-- 📁 Export log.csv
-- 🧪 Simple classifier retrain helper
+- `/` – Gallery of accepted visits
+- `/review` – Tag or discard uncertain predictions
+- `/stats` – Frequency charts + heatmaps
 
 ---
 
