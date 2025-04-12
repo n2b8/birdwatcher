@@ -13,7 +13,7 @@ print("TELEGRAM_BOT_TOKEN:", os.getenv("TELEGRAM_BOT_TOKEN"))
 print("TELEGRAM_CHAT_ID:", os.getenv("TELEGRAM_CHAT_ID"))
 
 # Settings
-CONFIDENCE_THRESHOLD = 0.7
+CONFIDENCE_THRESHOLD = 0.65
 REVIEW_THRESHOLD = 0.1
 IMAGE_DIR = "images"
 MODEL_PATH = "model/efficientnet_b7_nabirds.onnx"
