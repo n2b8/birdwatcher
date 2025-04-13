@@ -29,7 +29,7 @@ def add_visit(filename, timestamp, species, confidence, status, classified=False
         c.execute("""
         INSERT OR REPLACE INTO visits
         (filename, timestamp, species, confidence, status, classified)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?)
         """, (filename, timestamp, species, confidence, status, int(classified)))
         conn.commit()
 
