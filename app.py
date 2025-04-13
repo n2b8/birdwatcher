@@ -4,6 +4,7 @@ from datetime import datetime
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import re
 from db import (
     get_connection,
     update_status,
@@ -15,6 +16,25 @@ from db import (
 app = Flask(__name__)
 IMAGE_DIR = "images"
 os.makedirs(IMAGE_DIR, exist_ok=True)
+
+def format_species_name(raw_name):
+    # Skip already-formatted entries
+    if "(" in raw_name or not re.match(r"^\d+_", raw_name):
+        return raw_name
+
+    # Remove numeric prefix
+    _, base = raw_name.split("_", 1)
+    base = base.replace("_", " ")
+
+    # Detect and extract common qualifiers
+    qualifiers = {"male", "female", "immature", "juvenile", "breeding", "nonbreeding", "adult"}
+    tokens = base.split()
+    if len(tokens) > 1 and tokens[-1].lower() in qualifiers:
+        name = " ".join(tokens[:-1])
+        qualifier = tokens[-1]
+        return f"{name} ({qualifier.capitalize()})"
+
+    return base.strip()
 
 @app.route("/")
 def index():
@@ -31,6 +51,8 @@ def index():
             LIMIT ? OFFSET ?
         """, (per_page, offset))
         rows = [dict(zip([col[0] for col in cursor.description], row)) for row in cursor.fetchall()]
+        for row in rows:
+            row["species"] = format_species_name(row["species"])
 
         cursor = conn.execute("""
             SELECT COUNT(*) FROM visits
@@ -60,6 +82,8 @@ def review():
             LIMIT ? OFFSET ?
         """, (per_page, offset))
         rows = [dict(zip([col[0] for col in cursor.description], row)) for row in cursor.fetchall()]
+        for row in rows:
+            row["species"] = format_species_name(row["species"])
 
         cursor = conn.execute("""
             SELECT COUNT(*) FROM visits
