@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory
 import os
+import csv
 from datetime import datetime
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -16,40 +17,35 @@ app = Flask(__name__)
 IMAGE_DIR = "images"
 os.makedirs(IMAGE_DIR, exist_ok=True)
 
+# Load species label mapping from CSV
+SPECIES_LOOKUP = {}
+with open("model/label_map.csv", newline="", encoding="utf-8") as f:
+    reader = csv.DictReader(f)
+    for row in reader:
+        species_id = row["ID"].strip()
+        name = row["Species"].strip()
+        subtitle = row["Subtitle"].strip() if "Subtitle" in row and row["Subtitle"] else None
+        SPECIES_LOOKUP[species_id] = (name, subtitle)
+
 def format_species_name(raw_name):
     if not raw_name:
         return "Unknown"
 
-    raw_name = str(raw_name).strip()
+    raw_name = raw_name.strip()
 
-    # Drop any "(ID: xxx)" tags completely
-    raw_name = re.sub(r"\s*\(ID:\s*\d+\)", "", raw_name)
+    # Handle special case
+    if raw_name.lower() == "not_a_bird":
+        return "Not a Bird"
 
-    # Handle cases like "957_House Finch Adult Male"
-    if re.match(r"^\d+_", raw_name):
-        _, rest = raw_name.split("_", 1)
-    else:
-        rest = raw_name
+    # Match leading numeric ID
+    match = re.match(r"^(\d+)", raw_name)
+    if match:
+        species_id = match.group(1)
+        if species_id in SPECIES_LOOKUP:
+            name, subtitle = SPECIES_LOOKUP[species_id]
+            return f"{name} ({subtitle})" if subtitle else name
 
-    # Normalize underscores and commas
-    rest = rest.replace("_", "/").replace(",", "/").strip()
-
-    # Identify qualifier words
-    known_words = [
-        "adult", "juvenile", "immature", "nonbreeding", "breeding",
-        "male", "female", "morph", "winter", "red-backed", "gray-headed",
-        "white-winged", "white-striped", "tan-striped", "sooty", "red",
-        "myrtle", "audubons", "oregon", "pink-sided"
-    ]
-
-    tokens = rest.split()
-    for i in range(1, min(4, len(tokens)) + 1):
-        name = " ".join(tokens[:-i])
-        qualifier = " ".join(tokens[-i:])
-        if any(word in qualifier.lower() for word in known_words):
-            return f"{name} ({qualifier})"
-
-    return rest
+    return raw_name  # fallback if no match
 
 @app.route("/")
 def index():
