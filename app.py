@@ -110,7 +110,7 @@ def stats():
     with get_connection() as conn:
         cursor = conn.execute("""
             SELECT * FROM visits
-            WHERE confidence IS NOT NULL AND confidence >= 0.7
+            WHERE status = 'accepted'
         """)
         rows = [dict(zip([col[0] for col in cursor.description], row)) for row in cursor.fetchall()]
 
