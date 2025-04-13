@@ -17,21 +17,20 @@ def initialize_db():
             timestamp TEXT NOT NULL,
             species TEXT,
             confidence REAL,
-            motion_score INTEGER,
             status TEXT CHECK(status IN ('accepted', 'review', 'not_a_bird')) NOT NULL,
             classified BOOLEAN NOT NULL DEFAULT 0
         )
         """)
         conn.commit()
 
-def add_visit(filename, timestamp, species, confidence, motion_score, status, classified=False):
+def add_visit(filename, timestamp, species, confidence, status, classified=False):
     with get_connection() as conn:
         c = conn.cursor()
         c.execute("""
         INSERT OR REPLACE INTO visits
-        (filename, timestamp, species, confidence, motion_score, status, classified)
+        (filename, timestamp, species, confidence, status, classified)
         VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (filename, timestamp, species, confidence, motion_score, status, int(classified)))
+        """, (filename, timestamp, species, confidence, status, int(classified)))
         conn.commit()
 
 def update_status(filename, new_status):
