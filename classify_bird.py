@@ -115,7 +115,7 @@ def capture_and_classify(image_path, output_filename):
     return status
 
 if __name__ == "__main__":
-    if len(sys.argv) < 4:
+    if len(sys.argv) < 3:
         print("Usage: python classify_bird.py <image_path> <output_filename>")
         sys.exit(1)
 
