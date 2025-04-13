@@ -9,7 +9,6 @@ from db import (
     get_connection,
     update_status,
     delete_visit,
-    get_not_a_bird_count,
     add_visit,
 )
 
@@ -78,12 +77,10 @@ def index():
         """)
         total_count = cursor.fetchone()[0]
 
-    not_a_bird_count = get_not_a_bird_count()
     has_next = (offset + per_page) < total_count
     has_prev = page > 1
 
-    return render_template("index.html", entries=rows, not_a_bird_count=not_a_bird_count,
-                           page=page, has_next=has_next, has_prev=has_prev)
+    return render_template("index.html", entries=rows, page=page, has_next=has_next, has_prev=has_prev)
 
 @app.route("/review")
 def review():

@@ -50,9 +50,3 @@ def get_visits_by_status(status):
         c = conn.cursor()
         c.execute("SELECT * FROM visits WHERE status = ? ORDER BY timestamp DESC", (status,))
         return c.fetchall()
-
-def get_not_a_bird_count():
-    with get_connection() as conn:
-        c = conn.cursor()
-        c.execute("SELECT COUNT(*) FROM visits WHERE status = 'not_a_bird'")
-        return c.fetchone()[0]
