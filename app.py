@@ -22,29 +22,39 @@ def format_species_name(raw_name):
 
     raw_name = str(raw_name).strip()
 
-    # Leave already-formatted or clean names untouched
-    if "(" in raw_name or not re.match(r"^\d+_", raw_name):
+    # Bypass already clean names (like "not_a_bird" or those already in parentheses)
+    if "(" in raw_name and "ID:" not in raw_name:
         return raw_name
 
-    # Remove numeric prefix
-    try:
-        _, rest = raw_name.split("_", 1)
-    except ValueError:
-        return raw_name
+    # Remove 'ID' parentheses entirely
+    if "(" in raw_name and "ID:" in raw_name:
+        return re.sub(r"\s*\(ID: \d+\)", "", raw_name).strip()
 
-    tokens = rest.split()
-    if len(tokens) <= 1:
-        return rest
+    # Remove numeric prefix if present (e.g., 957_American Crow → American Crow)
+    if re.match(r"^\d+_", raw_name):
+        try:
+            _, rest = raw_name.split("_", 1)
+        except ValueError:
+            rest = raw_name
+    else:
+        rest = raw_name
 
-    # Extract qualifier from last tokens if it includes known keywords
-    known_words = ["adult", "juvenile", "immature", "nonbreeding", "breeding", "male", "female", "morph"]
+    # Separate name and possible qualifier
+    tokens = rest.replace(",", "").split()
+    known_words = [
+        "adult", "juvenile", "immature", "nonbreeding", "breeding",
+        "male", "female", "morph", "winter", "red-backed", "gray-headed",
+        "white-winged", "white-striped", "tan-striped", "sooty", "red", "myrtle",
+        "audubons", "oregon", "pink-sided"
+    ]
+
     for i in range(1, min(4, len(tokens)) + 1):
         name = " ".join(tokens[:-i])
         qualifier = " ".join(tokens[-i:])
-        if any(word in qualifier.lower() for word in known_words):
-            return f"{name} ({qualifier.replace('_', '/')})"
+        if any(word.lower() in qualifier.lower() for word in known_words):
+            qualifier = qualifier.replace("_", "/")
+            return f"{name} ({qualifier})"
 
-    # Otherwise return whole name without ID
     return rest
 
 @app.route("/")
