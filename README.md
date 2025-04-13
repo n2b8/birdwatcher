@@ -1,6 +1,6 @@
 # Birdwatcher 🐦📸
 
-A Raspberry Pi-powered bird identification system using real-time YOLO object detection and EfficientNet-based species classification. Detects birds with hardware acceleration, logs visits with metadata to SQLite, and provides a responsive web interface for viewing and stats.
+> A full-stack AI bird identification system deployed on Raspberry Pi, combining real-time object detection, custom fine-grained classification, web-based analytics, and cloud backup — all running on hardware the size of a credit card.
 
 ---
 
@@ -13,7 +13,46 @@ A Raspberry Pi-powered bird identification system using real-time YOLO object de
 - 🔍 Review interface for uncertain predictions
 - 📊 Species frequency charts + time-based heatmap
 - 📡 Telegram notifications on high-confidence visits
+- ☁️ Daily S3 backups of visits + metadata
+- 🌐 Web server for dashboard, review, and analytics
 - 🛠️ systemd services for background classification & detection
+
+---
+
+## System Architecture
+
+1. **YOLOv8 (Hailo-accelerated)** detects birds in real-time via `rpicam-hello`
+2. Captured frames are passed to a **custom EfficientNet-B7 classifier**
+3. Predictions are stored in a **SQLite database** with image metadata
+4. Confirmed images are saved to disk and displayed on a **Flask-based web dashboard**
+5. **Daily S3 backups** archive visit logs and images
+6. Optional **Telegram notifications** on high-confidence predictions
+
+---
+
+## Custom EfficientNet-B7 Classifier
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/YOUR_NOTEBOOK_FILE_ID)
+
+Trained from scratch using a feeder-bird-only subset of the NABirds dataset:
+
+- Input resolution: `600×600`
+- Class-balanced sampling
+- Mixed precision (AMP)
+- Early stopping and resume support
+- Best validation accuracy: **93.14%** (Epoch 23)
+- Final model exported as ONNX
+
+### Training Curve
+
+![Training Curve](https://raw.githubusercontent.com/n2b8/birdwatcher/main/docs/training_curve.png)
+
+### Model Artifacts
+```
+model/
+├── class_labels_v3.txt
+└── efficientnet_b7_backyard_feeder_birds.onnx
+```
 
 ---
 
@@ -108,20 +147,23 @@ sudo systemctl start birdwatcher.web_service.service
 
 ---
 
-## Custom EfficientNet-B7 Classifier
+## Model Hosting & Reusability
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/YOUR_NOTEBOOK_FILE_ID)
+The custom EfficientNet-B7 model will be hosted for public use:
 
-This project includes a custom-trained **EfficientNet-B7 model** built specifically for backyard bird feeder species using a filtered subset of the [NABirds dataset](https://dl.allaboutbirds.org/nabirds). 
+- [ ] Hugging Face Model Card (planned)
+- [ ] Kaggle Model Dataset (optional)
+- [ ] GitHub LFS or Releases (fallback)
 
-- Trained on 600×600 resolution images using mixed precision
-- Uses class-balanced sampling to mitigate dataset imbalance
-- Achieved **93.14% validation accuracy** with early stopping
-- Training was performed on Google Colab (A100 GPU) with full checkpointing and ONNX export support
+---
 
-### Training Curve
+## Demo & Media
 
-![Training Curve](https://raw.githubusercontent.com/n2b8/birdwatcher/main/docs/training_curve.png)
+Coming soon:
+
+- Hardware photos
+- Screencasts of the web UI
+- Live bird detection and classification demos
 
 ---
 
