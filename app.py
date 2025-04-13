@@ -17,40 +17,35 @@ IMAGE_DIR = "images"
 os.makedirs(IMAGE_DIR, exist_ok=True)
 
 def format_species_name(raw_name):
-    # Skip already formatted entries
+    if not raw_name:
+        return "Unknown"
+
+    raw_name = str(raw_name).strip()
+
+    # Leave already-formatted or clean names untouched
     if "(" in raw_name or not re.match(r"^\d+_", raw_name):
         return raw_name
 
-    # Remove numeric ID prefix
-    _, base = raw_name.split("_", 1)
+    # Remove numeric prefix
+    try:
+        _, rest = raw_name.split("_", 1)
+    except ValueError:
+        return raw_name
 
-    # Split into parts
-    tokens = base.split()
-    if len(tokens) < 2:
-        return base.replace("_", " ").strip()
+    tokens = rest.split()
+    if len(tokens) <= 1:
+        return rest
 
-    # Separate name and qualifier
-    name = " ".join(tokens[:-1])
-    qualifier = tokens[-1]
+    # Extract qualifier from last tokens if it includes known keywords
+    known_words = ["adult", "juvenile", "immature", "nonbreeding", "breeding", "male", "female", "morph"]
+    for i in range(1, min(4, len(tokens)) + 1):
+        name = " ".join(tokens[:-i])
+        qualifier = " ".join(tokens[-i:])
+        if any(word in qualifier.lower() for word in known_words):
+            return f"{name} ({qualifier.replace('_', '/')})"
 
-    # If the last token contains an underscore, it's a compound (e.g., Female_immature)
-    if "_" in qualifier:
-        qualifier = qualifier.replace("_", "/")
-
-    # Check for 2-word qualifier (like "Adult Male", "Breeding Audubons", etc.)
-    # Use a known set or heuristic
-    known_double_qualifiers = [
-        "Adult Male", "Adult Female", "Breeding Audubons", "Nonbreeding Plumage"
-    ]
-    for q in known_double_qualifiers:
-        if base.endswith(q):
-            name = base[: -len(q)].strip()
-            qualifier = q
-            break
-
-    # Final formatting
-    qualifier = " ".join(word.capitalize() for word in qualifier.split())
-    return f"{name} ({qualifier})"
+    # Otherwise return whole name without ID
+    return rest
 
 @app.route("/")
 def index():
