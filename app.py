@@ -18,23 +18,21 @@ IMAGE_DIR = "images"
 os.makedirs(IMAGE_DIR, exist_ok=True)
 
 def format_species_name(raw_name):
-    # Skip already-formatted entries
+    # Skip already formatted entries
     if "(" in raw_name or not re.match(r"^\d+_", raw_name):
         return raw_name
 
-    # Remove numeric prefix
+    # Remove numeric ID and extract rest
     _, base = raw_name.split("_", 1)
-    base = base.replace("_", " ")
 
-    # Detect and extract common qualifiers
-    qualifiers = {"male", "female", "immature", "juvenile", "breeding", "nonbreeding", "adult"}
+    # Special handling for underscores in the qualifier
     tokens = base.split()
-    if len(tokens) > 1 and tokens[-1].lower() in qualifiers:
+    if len(tokens) > 1:
         name = " ".join(tokens[:-1])
-        qualifier = tokens[-1]
-        return f"{name} ({qualifier.capitalize()})"
+        qualifier = tokens[-1].replace("_", "/")  # Convert _ to /
+        return f"{name} ({qualifier})"
 
-    return base.strip()
+    return base.replace("_", " ").strip()
 
 @app.route("/")
 def index():
