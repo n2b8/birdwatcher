@@ -6,6 +6,7 @@ import os
 import sys
 import shutil
 import requests
+from app import format_species_name
 from db import add_visit
 
 # Telegram debug
@@ -88,7 +89,8 @@ def capture_and_classify(image_path, output_filename):
 
     # Notify if accepted
     if status == "accepted":
-        send_telegram_message(f"A {species} has just visited your feeder!", image_path)
+        pretty_species = format_species_name(species)
+        send_telegram_message(f"A {pretty_species} has just visited your feeder!", image_path)
 
     # Move image to storage
     final_path = os.path.join(IMAGE_DIR, output_filename)
