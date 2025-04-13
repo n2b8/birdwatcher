@@ -63,7 +63,22 @@ def softmax(x):
     return e_x / e_x.sum()
 
 def capture_and_classify(image_path, output_filename):
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    # Extract timestamp from filename: "bird_2025-04-13_072653.jpg" or "motion_20250411_070035.jpg"
+    basename = os.path.splitext(output_filename)[0]
+
+    try:
+        if basename.startswith("bird_"):
+            timestamp = datetime.datetime.strptime(basename[5:], "%Y-%m-%d_%H%M%S")
+        elif basename.startswith("motion_"):
+            timestamp = datetime.datetime.strptime(basename[7:], "%Y%m%d_%H%M%S")
+        else:
+            raise ValueError("Unrecognized filename format")
+    except Exception as e:
+        print(f"[WARN] Failed to parse timestamp from filename: {e}")
+        timestamp = datetime.datetime.now()
+
+    timestamp = timestamp.strftime("%Y-%m-%d %H:%M:%S")
+
     input_data = preprocess_image(image_path)
     output = session.run(None, {input_name: input_data})[0]
     probs = softmax(np.squeeze(output))
