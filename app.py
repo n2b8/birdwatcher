@@ -222,5 +222,24 @@ def snap():
 
     return redirect(url_for("index"))
 
+@app.route("/edit/<filename>", methods=["GET", "POST"])
+def edit_species(filename):
+    if request.method == "POST":
+        new_species = request.form["species"]
+        with get_connection() as conn:
+            conn.execute("""
+                UPDATE visits
+                SET species = ?, confidence = 0.0, classified = 1
+                WHERE filename = ?
+            """, (new_species, filename))
+            conn.commit()
+        return redirect(url_for("index"))
+
+    # GET: Show dropdown
+    with open("model/class_labels_v3.txt") as f:
+        class_labels = [line.strip() for line in f]
+
+    return render_template("edit.html", filename=filename, species_options=class_labels)
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)

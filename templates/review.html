@@ -36,6 +36,9 @@
     <form action="{{ url_for('delete', filename=entry.filename) }}" method="POST">
       <button type="submit">🗑️ Delete</button>
     </form>
+    <form action="{{ url_for('edit_species', filename=entry.filename) }}" method="GET">
+      <button type="submit">✏️ Edit</button>
+    </form>    
   </div>
   {% endfor %}
   <div style="margin-top: 2em;">

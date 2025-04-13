@@ -1,0 +1,19 @@
+<!doctype html>
+<html>
+<head>
+  <title>Edit Classification</title>
+</head>
+<body>
+  <h2>Edit Classification for: {{ filename }}</h2>
+  <form method="POST">
+    <label for="species">Select species:</label>
+    <select name="species" required>
+      {% for species in species_options %}
+        <option value="{{ species }}">{{ species }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit">💾 Save</button>
+  </form>
+  <p><a href="{{ url_for('index') }}">← Back</a></p>
+</body>
+</html>
