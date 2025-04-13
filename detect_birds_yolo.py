@@ -75,7 +75,6 @@ def monitor_yolo():
                             timestamp=timestamp,
                             species=None,
                             confidence=confidence,
-                            motion_score=None,
                             status="review",
                             classified=False
                         )

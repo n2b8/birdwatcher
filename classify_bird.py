@@ -61,7 +61,7 @@ def softmax(x):
     e_x = np.exp(x - np.max(x))
     return e_x / e_x.sum()
 
-def capture_and_classify(image_path, output_filename, motion_score=None):
+def capture_and_classify(image_path, output_filename):
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     input_data = preprocess_image(image_path)
     output = session.run(None, {input_name: input_data})[0]
@@ -108,7 +108,6 @@ def capture_and_classify(image_path, output_filename, motion_score=None):
         timestamp=timestamp,
         species=species,
         confidence=round(float(confidence), 4),
-        motion_score=int(motion_score) if motion_score else None,
         status=status
     )
 
@@ -117,12 +116,11 @@ def capture_and_classify(image_path, output_filename, motion_score=None):
 
 if __name__ == "__main__":
     if len(sys.argv) < 4:
-        print("Usage: python classify_bird.py <image_path> <output_filename> <motion_score>")
+        print("Usage: python classify_bird.py <image_path> <output_filename>")
         sys.exit(1)
 
     image_path = sys.argv[1]
     output_filename = sys.argv[2]
-    motion_score = sys.argv[3]
 
-    result = capture_and_classify(image_path, output_filename, motion_score)
+    result = capture_and_classify(image_path, output_filename)
     sys.exit(0 if result == "accepted" else 1)

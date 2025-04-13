@@ -19,7 +19,6 @@
   {% for entry in entries %}
   <div class="review">
     <strong>{{ entry.species }}</strong><br>
-    <span class="motion-score">Motion Score: {{ entry.motion_score }}</span><br>
     <span class="confidence">Confidence: {{ entry.confidence }}</span><br>
     <time>{{ entry.timestamp }}</time><br>
     <a href="{{ url_for('serve_image', filename=entry.filename) }}" target="_blank">

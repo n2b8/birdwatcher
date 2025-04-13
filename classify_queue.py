@@ -35,8 +35,7 @@ def classify_image(filename):
     result = subprocess.run([
         "python3", "classify_bird.py",
         path,
-        filename,
-        "1000"
+        filename
     ])
 
     if result.returncode == 2:  # special return code for discarded
