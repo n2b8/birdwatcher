@@ -128,6 +128,9 @@ def stats():
     df = pd.DataFrame(rows)
     df["timestamp"] = pd.to_datetime(df["timestamp"])
 
+    # 👇 Apply standardized species formatting
+    df["species"] = df["species"].apply(format_species_name)
+
     # Top 10 bar chart
     top_species = df["species"].value_counts().head(10)
     plt.figure(figsize=(10, 5))
