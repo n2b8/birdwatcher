@@ -22,30 +22,36 @@ def format_species_name(raw_name):
     if "(" in raw_name or not re.match(r"^\d+_", raw_name):
         return raw_name
 
-    # Remove numeric ID
+    # Remove numeric ID prefix
     _, base = raw_name.split("_", 1)
-    base = base.replace("_", " ")
 
-    # Try to split the last 2+ words as qualifier if known patterns
-    known_qualifiers = [
-        "Adult Male", "Adult Female", "Juvenile", "Immature",
-        "Female immature", "Female juvenile", "Breeding Audubons", "Nonbreeding"
+    # Split into parts
+    tokens = base.split()
+    if len(tokens) < 2:
+        return base.replace("_", " ").strip()
+
+    # Separate name and qualifier
+    name = " ".join(tokens[:-1])
+    qualifier = tokens[-1]
+
+    # If the last token contains an underscore, it's a compound (e.g., Female_immature)
+    if "_" in qualifier:
+        qualifier = qualifier.replace("_", "/")
+
+    # Check for 2-word qualifier (like "Adult Male", "Breeding Audubons", etc.)
+    # Use a known set or heuristic
+    known_double_qualifiers = [
+        "Adult Male", "Adult Female", "Breeding Audubons", "Nonbreeding Plumage"
     ]
-
-    for q in known_qualifiers:
+    for q in known_double_qualifiers:
         if base.endswith(q):
             name = base[: -len(q)].strip()
-            qualifier = q.replace(" ", "/") if "_" in raw_name else q
-            return f"{name} ({qualifier})"
+            qualifier = q
+            break
 
-    # Fallback: split last word only
-    tokens = base.split()
-    if len(tokens) > 1:
-        name = " ".join(tokens[:-1])
-        qualifier = tokens[-1]
-        return f"{name} ({qualifier})"
-
-    return base.strip()
+    # Final formatting
+    qualifier = " ".join(word.capitalize() for word in qualifier.split())
+    return f"{name} ({qualifier})"
 
 @app.route("/")
 def index():
