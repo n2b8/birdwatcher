@@ -15,6 +15,14 @@ review/
 visits/
 images/
 
+# Backup script
+backup_to_minio.sh
+
+# Logs
+backup.log
+detection_log.txt
+hailort.log
+
 # Python cache
 *.pyc
 __pycache__/
@@ -32,4 +40,6 @@ birdenv/
 # large model files
 model/class_labels_v2.txt
 model/efficientnet_b7_nabirds.onnx
+model/class_labels_v3.txt
+model/efficientnet_b7_backyard_feeder_birds.onnx
 
