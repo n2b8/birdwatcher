@@ -152,6 +152,8 @@ def stats():
     # Create a full 7x24 grid
     full_index = pd.MultiIndex.from_product([all_days, all_hours], names=["day", "hour"])
     activity = df.groupby(["day", "hour"]).size().reindex(full_index, fill_value=0).unstack()
+    day_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    activity = activity.reindex(day_order)  # ✅ force correct row order
 
     # Annotated single-hue heatmap
     plt.figure(figsize=(14, 6))
