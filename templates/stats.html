@@ -40,8 +40,12 @@
   </div>
 
   <div class="chart">
-    <h2>Visits by Time of Day and Weekday</h2>
+    <h2>Bird Detection Density by Time of Day and Weekday</h2>
+    <p style="color: #555; font-size: 0.9em;">
+      Each cell shows the number of motion-triggered detections during that hour on that day.<br>
+      (This does not represent unique bird visits — some birds may linger and be detected multiple times.)
+    </p>
     <img src="{{ url_for('static', filename='visit_heatmap.png') }}" alt="Visit Heatmap">
-  </div>
+  </div>  
 </body>
 </html>

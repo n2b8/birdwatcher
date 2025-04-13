@@ -135,23 +135,35 @@ def stats():
     top_species = df["species"].value_counts().head(10)
     plt.figure(figsize=(10, 5))
     top_species.plot(kind="barh", color="skyblue")
-    plt.xlabel("Number of Visits")
+    plt.xlabel("Number of Detections")
     plt.ylabel("Species")
-    plt.title("Top 10 Most Frequently Seen Species")
+    plt.title("Top 10 Most Frequently Detected Species")
     plt.tight_layout()
     plt.savefig("static/species_bar.png")
     plt.close()
 
-    # Heatmap
+    # Heatmap: Bird detection density
     df["hour"] = df["timestamp"].dt.hour
     df["day"] = df["timestamp"].dt.day_name()
-    heatmap_data = df.groupby(["day", "hour"]).size().unstack(fill_value=0)
-    day_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-    heatmap_data = heatmap_data.reindex(day_order)
 
-    plt.figure(figsize=(12, 6))
-    sns.heatmap(heatmap_data, cmap="YlGnBu")
-    plt.title("Bird Visit Frequency by Time of Day and Weekday")
+    all_hours = list(range(24))
+    all_days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+
+    # Create a full 7x24 grid
+    full_index = pd.MultiIndex.from_product([all_days, all_hours], names=["day", "hour"])
+    activity = df.groupby(["day", "hour"]).size().reindex(full_index, fill_value=0).unstack()
+
+    # Annotated single-hue heatmap
+    plt.figure(figsize=(14, 6))
+    sns.heatmap(
+        activity,
+        cmap="Blues",
+        annot=True,
+        fmt="d",
+        linewidths=0.5,
+        cbar_kws={"label": "Detections"}
+    )
+    plt.title("Bird Detection Density by Time of Day and Weekday")
     plt.xlabel("Hour of Day")
     plt.ylabel("Day of Week")
     plt.tight_layout()
