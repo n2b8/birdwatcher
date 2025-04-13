@@ -108,6 +108,23 @@ sudo systemctl start birdwatcher.web_service.service
 
 ---
 
+## Custom EfficientNet-B7 Classifier
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/YOUR_NOTEBOOK_FILE_ID)
+
+This project includes a custom-trained **EfficientNet-B7 model** built specifically for backyard bird feeder species using a filtered subset of the [NABirds dataset](https://dl.allaboutbirds.org/nabirds). 
+
+- Trained on 600×600 resolution images using mixed precision
+- Uses class-balanced sampling to mitigate dataset imbalance
+- Achieved **93.14% validation accuracy** with early stopping
+- Training was performed on Google Colab (A100 GPU) with full checkpointing and ONNX export support
+
+### Training Curve
+
+![Training Curve](https://raw.githubusercontent.com/n2b8/birdwatcher/main/docs/training_curve.png)
+
+---
+
 ## License
 
 GPL License
