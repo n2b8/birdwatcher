@@ -1,19 +1,19 @@
-<!doctype html>
-<html>
-<head>
-  <title>Edit Classification</title>
-</head>
-<body>
-  <h2>Edit Classification for: {{ filename }}</h2>
-  <form method="POST">
-    <label for="species">Select species:</label>
-    <select name="species" required>
-      {% for species in species_options %}
-        <option value="{{ species }}">{{ species }}</option>
-      {% endfor %}
-    </select>
-    <button type="submit">💾 Save</button>
-  </form>
-  <p><a href="{{ url_for('index') }}">← Back</a></p>
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}Edit Classification{% endblock %}
+{% block content %}
+<h2 class="text-xl font-semibold mb-4">✏️ Edit Classification</h2>
+
+<form method="POST" class="bg-white p-4 rounded shadow w-full max-w-md mx-auto">
+  <label for="species" class="block font-medium mb-1">Select species:</label>
+  <select name="species" id="species" required class="w-full border rounded px-2 py-1 mb-4">
+    {% for species in species_options %}
+      <option value="{{ species }}">{{ species }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="bg-forest text-white px-4 py-2 rounded">💾 Save</button>
+</form>
+
+<div class="mt-4 text-center">
+  <a href="{{ url_for('index') }}" class="text-blue-600 hover:underline">← Back</a>
+</div>
+{% endblock %}

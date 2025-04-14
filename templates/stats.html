@@ -1,51 +1,19 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Bird Feeder Stats</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      padding: 2em;
-      background: #f0f0f0;
-    }
-    h1 {
-      margin-bottom: 0.5em;
-    }
-    .chart {
-      background: white;
-      padding: 1em;
-      margin-bottom: 2em;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    img {
-      max-width: 100%;
-      border: 1px solid #ccc;
-    }
-    a {
-      text-decoration: none;
-      font-size: 0.9em;
-      color: #0077cc;
-    }
-  </style>
-</head>
-<body>
-  <h1>📊 Bird Feeder Statistics</h1>
-  <p><a href="/">← Back to Gallery</a></p>
+{% extends "base.html" %}
+{% block title %}Bird Feeder Stats{% endblock %}
+{% block content %}
+<h2 class="text-xl font-semibold mb-4">📊 Bird Feeder Stats</h2>
 
-  <div class="chart">
-    <h2>Top 10 Most Frequent Visitors</h2>
-    <img src="{{ url_for('static', filename='species_bar.png') }}" alt="Species Frequency">
-  </div>
+<div class="bg-white p-4 mb-6 rounded shadow">
+  <h3 class="text-lg font-semibold mb-2">Top 10 Most Frequent Visitors</h3>
+  <img src="{{ url_for('static', filename='species_bar.png') }}" class="rounded w-full border">
+</div>
 
-  <div class="chart">
-    <h2>Bird Detection Density by Time of Day and Weekday</h2>
-    <p style="color: #555; font-size: 0.9em;">
-      Each cell shows the number of motion-triggered detections during that hour on that day.<br>
-      (This does not represent unique bird visits — some birds may linger and be detected multiple times.)
-    </p>
-    <img src="{{ url_for('static', filename='visit_heatmap.png') }}" alt="Visit Heatmap">
-  </div>  
-</body>
-</html>
+<div class="bg-white p-4 mb-6 rounded shadow">
+  <h3 class="text-lg font-semibold mb-2">Bird Detection Density by Time of Day and Weekday</h3>
+  <p class="text-sm text-gray-600 mb-2">
+    Each cell shows the number of motion-triggered detections during that hour on that day.
+    (May include repeat detections of the same bird.)
+  </p>
+  <img src="{{ url_for('static', filename='visit_heatmap.png') }}" class="rounded w-full border">
+</div>
+{% endblock %}

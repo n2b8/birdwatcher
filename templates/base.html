@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Birdwatcher{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            fieldpaper: '#f3f1ed',
+            forest: '#4b6b48',
+            rustbrown: '#914c3f',
+            softbrown: '#836953',
+            slateblue: '#3a5a70'
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-fieldpaper text-gray-800 min-h-screen">
+  <header class="bg-forest text-white p-4 shadow">
+    <div class="max-w-6xl mx-auto flex justify-between items-center">
+      <h1 class="text-2xl font-bold">🪶 Birdwatcher</h1>
+      <nav class="space-x-4 text-sm">
+        <a href="/" class="hover:underline">Gallery</a>
+        <a href="/review" class="hover:underline">Review</a>
+        <a href="/stats" class="hover:underline">Stats</a>
+        <a href="/snap" class="hover:underline">📸 Snap</a>
+      </nav>
+    </div>
+  </header>
+  <main class="max-w-6xl mx-auto p-4">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>
