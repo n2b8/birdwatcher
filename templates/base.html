@@ -27,16 +27,33 @@
   <link href="https://cdn.jsdelivr.net/npm/simplelightbox@2.14.2/dist/simple-lightbox.min.css" rel="stylesheet" />
 </head>
 <body class="bg-fieldpaper text-gray-800 min-h-screen">
+
+  <!-- Responsive Header with Hamburger Menu -->
   <header class="bg-forest text-white p-4 shadow">
-    <div class="max-w-6xl mx-auto flex justify-between items-center">
-      <h1 class="text-2xl font-bold">🪶 Birdwatcher</h1>
-      <nav class="space-x-4 text-sm">
+    <div class="max-w-6xl mx-auto flex items-center justify-between">
+      <a href="/" class="text-2xl font-bold hover:underline">🪶 Birdwatcher</a>
+
+      <!-- Mobile menu button -->
+      <button id="menu-button" class="sm:hidden text-white text-2xl focus:outline-none">
+        ☰
+      </button>
+
+      <!-- Desktop nav -->
+      <nav id="menu" class="hidden sm:flex space-x-6 text-sm">
         <a href="/" class="hover:underline">Gallery</a>
         <a href="/review" class="hover:underline">Review</a>
         <a href="/stats" class="hover:underline">Stats</a>
         <a href="/snap" class="hover:underline">📸 Snap</a>
       </nav>
     </div>
+
+    <!-- Mobile dropdown nav -->
+    <nav id="mobile-menu" class="sm:hidden hidden flex-col space-y-2 mt-3 text-sm">
+      <a href="/" class="block hover:underline">Gallery</a>
+      <a href="/review" class="block hover:underline">Review</a>
+      <a href="/stats" class="block hover:underline">Stats</a>
+      <a href="/snap" class="block hover:underline">📸 Snap</a>
+    </nav>
   </header>
 
   <main class="max-w-6xl mx-auto p-4">
@@ -47,6 +64,15 @@
   <script src="https://cdn.jsdelivr.net/npm/simplelightbox@2.14.2/dist/simple-lightbox.min.js"></script>
   <script>
     const lightbox = new SimpleLightbox('a.lightbox', { captions: false });
+
+    const menuButton = document.getElementById('menu-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+
+    if (menuButton && mobileMenu) {
+      menuButton.addEventListener('click', () => {
+        mobileMenu.classList.toggle('hidden');
+      });
+    }
   </script>
 </body>
 </html>
