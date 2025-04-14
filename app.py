@@ -126,7 +126,7 @@ def stats():
     # Top 10 bar chart
     top_species = df["species"].value_counts().head(10)
     plt.figure(figsize=(10, 5))
-    top_species.plot(kind="barh", color="skyblue")
+    top_species.plot(kind="barh", color=["#4b6b48" if i % 2 == 0 else "#836953" for i in range(len(top_species))])
     plt.xlabel("Number of Detections")
     plt.ylabel("Species")
     plt.title("Top 10 Most Frequently Detected Species")
@@ -147,11 +147,18 @@ def stats():
     day_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
     activity = activity.reindex(day_order)  # ✅ force correct row order
 
-    # Annotated single-hue heatmap
+    # Annotated custom color heatmap
+    from matplotlib.colors import LinearSegmentedColormap
+
+    custom_cmap = LinearSegmentedColormap.from_list(
+        "woodsy",
+        ["#f3f1ed", "#4b6b48", "#3a5a70"]  # light -> green -> slate blue
+    )
+
     plt.figure(figsize=(14, 6))
     sns.heatmap(
         activity,
-        cmap="Blues",
+        cmap=custom_cmap,
         annot=True,
         fmt="d",
         linewidths=0.5,
