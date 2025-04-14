@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Birdwatcher{% endblock %}</title>
+
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -20,6 +22,9 @@
       }
     }
   </script>
+
+  <!-- SimpleLightbox CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/simplelightbox@2.14.2/dist/simple-lightbox.min.css" rel="stylesheet" />
 </head>
 <body class="bg-fieldpaper text-gray-800 min-h-screen">
   <header class="bg-forest text-white p-4 shadow">
@@ -33,8 +38,15 @@
       </nav>
     </div>
   </header>
+
   <main class="max-w-6xl mx-auto p-4">
     {% block content %}{% endblock %}
   </main>
+
+  <!-- SimpleLightbox JS -->
+  <script src="https://cdn.jsdelivr.net/npm/simplelightbox@2.14.2/dist/simple-lightbox.min.js"></script>
+  <script>
+    const lightbox = new SimpleLightbox('a.lightbox', { captions: false });
+  </script>
 </body>
 </html>

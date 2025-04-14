@@ -1,11 +1,18 @@
 {% extends "base.html" %}
 {% block title %}Review Uncertain Images{% endblock %}
+
 {% block content %}
 <h2 class="text-xl font-semibold mb-4">🔍 Review Queue</h2>
+
 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
   {% for entry in entries %}
   <div class="bg-white rounded-lg shadow overflow-hidden">
-    <img src="{{ url_for('serve_thumbnail', filename=entry.filename) }}" alt="{{ entry.species }}" class="w-full" loading="lazy">
+    <a href="{{ url_for('serve_image', filename=entry.filename) }}" class="lightbox block">
+      <img src="{{ url_for('serve_thumbnail', filename=entry.filename) }}"
+           alt="{{ entry.species }}"
+           class="w-full"
+           loading="lazy">
+    </a>
     <div class="p-3">
       <p class="font-semibold">{{ entry.species }}</p>
       <p class="text-sm text-gray-600">Confidence: {{ entry.confidence }}</p>
