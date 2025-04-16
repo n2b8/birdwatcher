@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import os
 import cv2
 import time
@@ -12,46 +13,39 @@ from db import add_visit
 CAPTURE_DIR = "images"
 os.makedirs(CAPTURE_DIR, exist_ok=True)
 
-# ==== Environment Variables for RTSP ====
-rtsp_user = os.environ.get("RTSP_USER")
-rtsp_pass = os.environ.get("RTSP_PASS")
-rtsp_host = os.environ.get("RTSP_HOST")
+# ==== RTSP from env ====
+rtsp_user = os.environ["RTSP_USER"]
+rtsp_pass = os.environ["RTSP_PASS"]
+rtsp_host = os.environ["RTSP_HOST"]
 rtsp_port = os.environ.get("RTSP_PORT", "554")
-rtsp_path = os.environ.get("RTSP_PATH")
-if not all([rtsp_user, rtsp_pass, rtsp_host, rtsp_path]):
-    raise EnvironmentError("Missing RTSP environment variables.")
+rtsp_path = os.environ["RTSP_PATH"]
 
-# Force TCP transport to reduce packet loss
-VIDEO_SOURCE = f"rtsp_transport=tcp;rtsp://{rtsp_user}:{rtsp_pass}@{rtsp_host}:{rtsp_port}/{rtsp_path}"
+# Force TCP transport
+VIDEO_SOURCE = (
+    f"rtsp://{rtsp_user}:{rtsp_pass}@{rtsp_host}:{rtsp_port}/{rtsp_path}"
+)
+CAPTURE_OPTS = cv2.CAP_FFMPEG
 
 # ==== Inference Config ====
 CONFIDENCE_THRESHOLD = 0.6
-COOLDOWN_SECONDS = 10
+COOLDOWN_SECONDS       = 10
 
-# ==== Model Configuration ====
-inference_host_address = "@local"
-zoo_url = "degirum/hailo"
-token = ''  # local inference
-model_name = "yolov8n_relu6_coco--640x640_quant_hailort_hailo8_1"
-output_class_set = {"bird"}
-
-# Load the AI model
+# ==== Model Config ====
 model = dg.load_model(
-    model_name=model_name,
-    inference_host_address=inference_host_address,
-    zoo_url=zoo_url,
-    token=token,
-    output_class_set=output_class_set
+    model_name="@local",            # replace if needed
+    inference_host_address="@local",
+    zoo_url="degirum/hailo",
+    token="",
+    output_class_set={"bird"},
 )
 
 class RTSPBuffer:
-    """Background thread to fill buffer with the latest frames."""
     def __init__(self, src_url, buf_size=60, retry_delay=5):
-        self.src_url = src_url
-        self.buf = deque(maxlen=buf_size)
+        self.src_url     = src_url
         self.retry_delay = retry_delay
-        self.stopped = False
-        self.thread = threading.Thread(target=self._reader, daemon=True)
+        self.buf         = deque(maxlen=buf_size)
+        self.stopped     = False
+        self.thread      = threading.Thread(target=self._reader, daemon=True)
         self.thread.start()
 
     def _reader(self):
@@ -60,19 +54,20 @@ class RTSPBuffer:
             if cap is None or not cap.isOpened():
                 if cap:
                     cap.release()
-                print(f"[WARN] Cannot open RTSP stream, retrying in {self.retry_delay}s...")
+                print(f"[WARN] Can't open stream—retry in {self.retry_delay}s")
                 time.sleep(self.retry_delay)
-                cap = cv2.VideoCapture(self.src_url)
+                cap = cv2.VideoCapture(self.src_url, CAPTURE_OPTS)
                 continue
+
             ret, frame = cap.read()
             if ret:
                 self.buf.append(frame)
             else:
-                # Read failed, reset capture to retry
-                print("[WARN] Failed to read frame, restarting capture...")
+                print("[WARN] Frame read failed—reopening capture")
                 cap.release()
                 cap = None
                 time.sleep(0.1)
+
         if cap:
             cap.release()
 
@@ -83,55 +78,51 @@ class RTSPBuffer:
         self.stopped = True
         self.thread.join()
 
+def monitor_rtsp():
+    print("[INFO] Starting buffered RTSP monitor...")
+    buffer = RTSPBuffer(VIDEO_SOURCE)
+    last_ts = 0
 
-def monitor_yolo_rtsp():
-    print("[INFO] Starting buffered RTSP bird monitor...")
-    last_detection = 0
+    with degirum_tools.Display("Live Inference") as disp:
+        while True:
+            frame = buffer.read()
+            if frame is None:
+                continue
 
-    # Initialize buffer (~2s at 30fps)
-    buffer = RTSPBuffer(VIDEO_SOURCE, buf_size=60)
-    try:
-        with degirum_tools.Display("AI Camera Live Inference") as display:
-            while True:
-                frame = buffer.read()
-                if frame is None:
+            # Run inference on a single frame
+            result = degirum_tools.predict_frame(model, frame)
+            disp.show(result)
+
+            text = str(result).lower()
+            if "object:" in text and "bird" in text:
+                try:
+                    conf = float(text.split("(")[-1].split(")")[0])
+                except:
+                    conf = 0.0
+                if conf < CONFIDENCE_THRESHOLD:
                     continue
 
-                # Run inference on the numpy frame directly
-                inference_result = dg_tools.predict_frame(model, frame)
-                display.show(inference_result)
+                now = time.time()
+                if now - last_ts < COOLDOWN_SECONDS:
+                    continue
 
-                text = str(inference_result).lower()
-                if "object:" in text and "bird" in text:
-                    try:
-                        confidence = float(text.split("(")[-1].split(")")[0])
-                    except:
-                        confidence = 0.0
-                    if confidence < CONFIDENCE_THRESHOLD:
-                        continue
-
-                    now = time.time()
-                    if now - last_detection < COOLDOWN_SECONDS:
-                        continue
-
-                    print("[DETECTED BIRD]", inference_result)
-                    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    fname = f"bird_{ts.replace(':','').replace(' ','_')}.jpg"
-                    path = os.path.join(CAPTURE_DIR, fname)
-
-                    # Save the last buffered frame
-                    cv2.imwrite(path, frame)
-                    add_visit(filename=fname, timestamp=ts, species=None,
-                              confidence=confidence, status="review", classified=False)
-                    print(f"[CAPTURED] {fname}")
-
-                    last_detection = now
-                    print(f"[WAIT] Cooling down for {COOLDOWN_SECONDS}s\n")
-    except KeyboardInterrupt:
-        pass
-    finally:
-        buffer.stop()
-
+                ts     = datetime.now().strftime("%Y%m%d_%H%M%S")
+                fname  = f"bird_{ts}.jpg"
+                path   = os.path.join(CAPTURE_DIR, fname)
+                cv2.imwrite(path, frame)
+                add_visit(
+                    filename= fname,
+                    timestamp= datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    species= None,
+                    confidence= conf,
+                    status= "review",
+                    classified= False
+                )
+                print(f"[CAPTURED] {fname}")
+                last_ts = now
 
 if __name__ == "__main__":
-    monitor_yolo_rtsp()
+    try:
+        monitor_rtsp()
+    except KeyboardInterrupt:
+        print("[INFO] Stopping monitor.")
