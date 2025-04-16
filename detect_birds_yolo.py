@@ -46,24 +46,35 @@ model = dg.load_model(
 
 class RTSPBuffer:
     """Background thread to fill buffer with the latest frames."""
-    def __init__(self, src_url, buf_size=60):
+    def __init__(self, src_url, buf_size=60, retry_delay=5):
         self.src_url = src_url
         self.buf = deque(maxlen=buf_size)
+        self.retry_delay = retry_delay
         self.stopped = False
         self.thread = threading.Thread(target=self._reader, daemon=True)
         self.thread.start()
 
     def _reader(self):
-        cap = cv2.VideoCapture(self.src_url)
-        if not cap.isOpened():
-            raise RuntimeError("Cannot open RTSP stream")
+        cap = None
         while not self.stopped:
+            if cap is None or not cap.isOpened():
+                if cap:
+                    cap.release()
+                print(f"[WARN] Cannot open RTSP stream, retrying in {self.retry_delay}s...")
+                time.sleep(self.retry_delay)
+                cap = cv2.VideoCapture(self.src_url)
+                continue
             ret, frame = cap.read()
             if ret:
                 self.buf.append(frame)
             else:
-                time.sleep(0.01)
-        cap.release()
+                # Read failed, reset capture to retry
+                print("[WARN] Failed to read frame, restarting capture...")
+                cap.release()
+                cap = None
+                time.sleep(0.1)
+        if cap:
+            cap.release()
 
     def read(self):
         return self.buf[-1] if self.buf else None
@@ -87,7 +98,7 @@ def monitor_yolo_rtsp():
                     continue
 
                 # Run inference on the numpy frame directly
-                inference_result = degirum_tools.predict_frame(model, frame)
+                inference_result = dg_tools.predict_frame(model, frame)
                 display.show(inference_result)
 
                 text = str(inference_result).lower()
