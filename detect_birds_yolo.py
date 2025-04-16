@@ -14,29 +14,38 @@ CAPTURE_DIR = "images"
 os.makedirs(CAPTURE_DIR, exist_ok=True)
 
 # ==== RTSP from env ====
-rtsp_user = os.environ["RTSP_USER"]
-rtsp_pass = os.environ["RTSP_PASS"]
-rtsp_host = os.environ["RTSP_HOST"]
+rtsp_user = os.environ.get("RTSP_USER")
+rtsp_pass = os.environ.get("RTSP_PASS")
+rtsp_host = os.environ.get("RTSP_HOST")
 rtsp_port = os.environ.get("RTSP_PORT", "554")
-rtsp_path = os.environ["RTSP_PATH"]
+rtsp_path = os.environ.get("RTSP_PATH")
+if not all([rtsp_user, rtsp_pass, rtsp_host, rtsp_path]):
+    raise EnvironmentError("Missing one or more RTSP environment variables.")
 
-# Force TCP transport
+# Build RTSP URL and force TCP transport
 VIDEO_SOURCE = (
-    f"rtsp://{rtsp_user}:{rtsp_pass}@{rtsp_host}:{rtsp_port}/{rtsp_path}"
+    f"rtsp_transport=tcp;rtsp://{rtsp_user}:{rtsp_pass}@{rtsp_host}:{rtsp_port}/{rtsp_path}"
 )
 CAPTURE_OPTS = cv2.CAP_FFMPEG
 
 # ==== Inference Config ====
 CONFIDENCE_THRESHOLD = 0.6
-COOLDOWN_SECONDS       = 10
+COOLDOWN_SECONDS     = 10
 
 # ==== Model Config ====
+inference_host_address = "@local"
+zoo_url                = "degirum/hailo"
+token                  = ''
+model_name             = "yolov8n_relu6_coco--640x640_quant_hailort_hailo8l_1"
+output_class_set       = {"bird"}
+
+# Load the AI model
 model = dg.load_model(
-    model_name="@local",            # replace if needed
-    inference_host_address="@local",
-    zoo_url="degirum/hailo",
-    token="",
-    output_class_set={"bird"},
+    model_name=model_name,
+    inference_host_address=inference_host_address,
+    zoo_url=zoo_url,
+    token=token,
+    output_class_set=output_class_set
 )
 
 class RTSPBuffer:
@@ -78,6 +87,7 @@ class RTSPBuffer:
         self.stopped = True
         self.thread.join()
 
+
 def monitor_rtsp():
     print("[INFO] Starting buffered RTSP monitor...")
     buffer = RTSPBuffer(VIDEO_SOURCE)
@@ -89,7 +99,7 @@ def monitor_rtsp():
             if frame is None:
                 continue
 
-            # Run inference on a single frame
+            # Run inference on the numpy frame directly
             result = degirum_tools.predict_frame(model, frame)
             disp.show(result)
 
@@ -106,17 +116,17 @@ def monitor_rtsp():
                 if now - last_ts < COOLDOWN_SECONDS:
                     continue
 
-                ts     = datetime.now().strftime("%Y%m%d_%H%M%S")
-                fname  = f"bird_{ts}.jpg"
-                path   = os.path.join(CAPTURE_DIR, fname)
+                ts    = datetime.now().strftime("%Y%m%d_%H%M%S")
+                fname = f"bird_{ts}.jpg"
+                path  = os.path.join(CAPTURE_DIR, fname)
                 cv2.imwrite(path, frame)
                 add_visit(
-                    filename= fname,
-                    timestamp= datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    species= None,
-                    confidence= conf,
-                    status= "review",
-                    classified= False
+                    filename=fname,
+                    timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    species=None,
+                    confidence=conf,
+                    status="review",
+                    classified=False
                 )
                 print(f"[CAPTURED] {fname}")
                 last_ts = now
