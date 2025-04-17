@@ -1,10 +1,12 @@
 import os
+import sys
 import time
 import cv2
 import degirum as dg
 import degirum_tools
 from datetime import datetime
-from app.db import add_visit
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", "app"))
+from db import add_visit
 
 # ==== RTSP from env ====
 rtsp_user = os.environ["RTSP_USER"]

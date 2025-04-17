@@ -6,8 +6,9 @@ import os
 import sys
 import shutil
 import requests
-from app.app import format_species_name
-from app.db import add_visit
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", "app"))
+from app import format_species_name
+from db import add_visit
 
 # Telegram debug
 print("TELEGRAM_BOT_TOKEN:", os.getenv("TELEGRAM_BOT_TOKEN"))

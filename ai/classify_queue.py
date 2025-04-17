@@ -2,7 +2,8 @@ import time
 import os
 import sys
 import subprocess
-from app.db import get_connection, delete_visit
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", "app"))
+from db import get_connection, delete_visit
 
 CLASSIFY_INTERVAL = 60  # seconds
 
