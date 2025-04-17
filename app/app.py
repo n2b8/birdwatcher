@@ -6,7 +6,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import re
-from app.db import (
+from db import (
     get_connection,
     update_status,
     delete_visit,
