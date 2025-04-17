@@ -99,23 +99,24 @@ def monitor_rtsp():
             if frame is None:
                 continue
 
-            # Run inference on the numpy frame directly
-            result = degirum_tools.predict_frame(model, frame)
-            disp.show(result)
+                        # Run inference on the numpy frame directly
+            detections = list(model.predict_batch([frame]))[0]
+            display.show(detections)
 
-            text = str(result).lower()
-            if "object:" in text and "bird" in text:
-                try:
-                    conf = float(text.split("(")[-1].split(")")[0])
-                except:
-                    conf = 0.0
-                if conf < CONFIDENCE_THRESHOLD:
+            # Iterate through actual detection objects
+            for det in detections:
+                label = getattr(det, 'label', None)
+                score = getattr(det, 'score', None)
+                if label != 'bird' or score is None:
+                    continue
+                if score < CONFIDENCE_THRESHOLD:
                     continue
 
                 now = time.time()
                 if now - last_ts < COOLDOWN_SECONDS:
-                    continue
+                    break  # skip further detections until cooldown
 
+                print("[DETECTED BIRD] label=bird score=", score)
                 ts    = datetime.now().strftime("%Y%m%d_%H%M%S")
                 fname = f"bird_{ts}.jpg"
                 path  = os.path.join(CAPTURE_DIR, fname)
@@ -124,12 +125,13 @@ def monitor_rtsp():
                     filename=fname,
                     timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     species=None,
-                    confidence=conf,
+                    confidence=score,
                     status="review",
                     classified=False
                 )
                 print(f"[CAPTURED] {fname}")
                 last_ts = now
+                break  # only capture once per frame
 
 if __name__ == "__main__":
     try:
