@@ -2,7 +2,7 @@
 import sqlite3
 from datetime import datetime
 
-DB_FILE = "birdwatcher.db"
+DB_FILE = os.path.join(os.path.dirname(__file__), "birdwatcher.db")
 
 def get_connection():
     return sqlite3.connect(DB_FILE)
