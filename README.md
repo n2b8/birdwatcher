@@ -1,12 +1,12 @@
 # Birdwatcher 🐦📸
 
-> A full-stack AI bird identification system deployed on Raspberry Pi, combining real-time object detection, custom fine-grained classification, web-based analytics, and cloud backup — all running on hardware the size of a credit card.
+> A full-stack AI bird identification system deployed on Raspberry Pi, combining real-time object detection from an outdoor IP camera's RTSP stream, custom fine-grained classification, web-based analytics, and cloud backup — all running on hardware the size of a credit card.
 
 ---
 
 ## Features
 
-- 🦾 **YOLOv8 (Hailo)** real-time bird detection using `rpicam-hello`
+- 🦾 **YOLOv8 (Hailo)** real-time bird detection from RTSP IP camera stream
 - 📷 High-quality still capture on detection
 - 🧠 Custom EfficientNet-B7 classification (ONNX model, trained on a subset of the [NABirds dataset](https://dl.allaboutbirds.org/nabirds))
 - 🗂️ Images + metadata stored in SQLite (`visits` table)
@@ -21,7 +21,7 @@
 
 ## System Architecture
 
-1. **YOLOv8 (Hailo-accelerated)** detects birds in real-time via `rpicam-hello`
+1. **YOLOv8 (Hailo-accelerated)** detects birds in real-time from an outdoor RTSP IP camera
 2. Captured frames are passed to a **custom EfficientNet-B7 classifier**
 3. Predictions are stored in a **SQLite database** with image metadata
 4. Confirmed images are saved to disk and displayed on a **Flask-based web dashboard**
@@ -63,7 +63,7 @@ model/
 ├── app.py                     # Flask web dashboard
 ├── classify_bird.py           # Classify image using ONNX model
 ├── classify_queue.py          # Background classification queue processor
-├── detect_birds_yolo.py       # YOLOv8 Hailo detection loop (rpicam-hello)
+├── detect_birds_yolo.py       # YOLOv8 Hailo detection loop (RTSP stream)
 ├── db.py                      # SQLite connection + visit helpers
 ├── send_telegram.py           # Telegram notification module
 ├── test_telegram.py           # Test bot integration
