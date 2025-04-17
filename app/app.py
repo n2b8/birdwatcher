@@ -246,7 +246,7 @@ def edit_species(filename):
         return redirect(url_for("index"))
 
     # GET: Show dropdown
-    with open("model/class_labels_v3.txt") as f:
+    with open("model/class_labels.txt") as f:
         class_labels = [line.strip() for line in f]
 
     return render_template("edit.html", filename=filename, species_options=class_labels)
