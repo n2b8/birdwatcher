@@ -6,8 +6,8 @@ import os
 import sys
 import shutil
 import requests
-from app import format_species_name
-from db import add_visit
+from app.app import format_species_name
+from app.db import add_visit
 
 # Telegram debug
 print("TELEGRAM_BOT_TOKEN:", os.getenv("TELEGRAM_BOT_TOKEN"))
