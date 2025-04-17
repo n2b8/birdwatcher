@@ -14,7 +14,8 @@ from db import (
 )
 
 app = Flask(__name__)
-IMAGE_DIR = "images"
+THUMBNAIL_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "thumbnails")
+IMAGE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "images")
 os.makedirs(IMAGE_DIR, exist_ok=True)
 
 # Load species label mapping from CSV
@@ -179,7 +180,7 @@ def serve_image(filename):
 
 @app.route("/thumbnails/<path:filename>")
 def serve_thumbnail(filename):
-    return send_from_directory("thumbnails", filename)
+    return send_from_directory(THUMBNAIL_DIR, filename)
 
 @app.route("/mark_good/<filename>", methods=["POST"])
 def mark_good(filename):

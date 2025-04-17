@@ -16,7 +16,7 @@ print("TELEGRAM_CHAT_ID:", os.getenv("TELEGRAM_CHAT_ID"))
 # Settings
 CONFIDENCE_THRESHOLD = 0.65
 REVIEW_THRESHOLD = 0.1
-IMAGE_DIR = "images"
+IMAGE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "images")
 MODEL_PATH = "model/efficientnet_b7_backyard_feeder_birds.onnx"
 LABELS_PATH = "model/class_labels_v3.txt"
 
