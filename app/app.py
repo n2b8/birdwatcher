@@ -16,6 +16,7 @@ from db import (
 app = Flask(__name__, static_folder="static")
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 LABEL_MAP_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "ai", "model", "label_map.csv")
+CLASS_LABEL_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "ai", "model", "class_labels.txt")
 THUMBNAIL_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "thumbnails")
 IMAGE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "images")
 os.makedirs(IMAGE_DIR, exist_ok=True)
@@ -246,7 +247,7 @@ def edit_species(filename):
         return redirect(url_for("index"))
 
     # GET: Show dropdown
-    with open("model/class_labels.txt") as f:
+    with open(CLASS_LABEL_PATH) as f:
         class_labels = [line.strip() for line in f]
 
     return render_template("edit.html", filename=filename, species_options=class_labels)
