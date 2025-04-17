@@ -2,7 +2,7 @@ import time
 import os
 import sys
 import subprocess
-from db import get_connection, delete_visit
+from app.db import get_connection, delete_visit
 
 CLASSIFY_INTERVAL = 60  # seconds
 
