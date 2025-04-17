@@ -1,6 +1,6 @@
-# db.py
 import sqlite3
 from datetime import datetime
+import os
 
 DB_FILE = os.path.join(os.path.dirname(__file__), "birdwatcher.db")
 
