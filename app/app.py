@@ -13,8 +13,8 @@ from app.db import (
     add_visit,
 )
 
-app = Flask(__name__)
-STATIC_ROOT = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
+app = Flask(__name__, static_folder="static")
+STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 LABEL_MAP_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "ai", "model", "label_map.csv")
 THUMBNAIL_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "thumbnails")
 IMAGE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "images")
@@ -134,7 +134,7 @@ def stats():
     plt.ylabel("Species")
     plt.title("Top 10 Most Frequently Detected Species")
     plt.tight_layout()
-    plt.savefig(os.path.join(STATIC_ROOT, "species_bar.png"))
+    plt.savefig(os.path.join(STATIC_DIR, "species_bar.png"))
     plt.close()
 
     # Heatmap: Bird detection density
@@ -171,7 +171,7 @@ def stats():
     plt.xlabel("Hour of Day")
     plt.ylabel("Day of Week")
     plt.tight_layout()
-    plt.savefig(os.path.join(STATIC_ROOT, "visit_heatmap.png"))
+    plt.savefig(os.path.join(STATIC_DIR, "visit_heatmap.png"))
     plt.close()
 
     return render_template("stats.html")
