@@ -22,11 +22,10 @@ rtsp_path = os.environ.get("RTSP_PATH")
 if not all([rtsp_user, rtsp_pass, rtsp_host, rtsp_path]):
     raise EnvironmentError("Missing one or more RTSP environment variables.")
 
-# Build RTSP URL and force TCP transport
+# Build RTSP URL (using default backend)
 VIDEO_SOURCE = (
-    f"rtsp_transport=tcp;rtsp://{rtsp_user}:{rtsp_pass}@{rtsp_host}:{rtsp_port}/{rtsp_path}"
+    f"rtsp://{rtsp_user}:{rtsp_pass}@{rtsp_host}:{rtsp_port}/{rtsp_path}"
 )
-CAPTURE_OPTS = cv2.CAP_FFMPEG
 
 # ==== Inference Config ====
 CONFIDENCE_THRESHOLD = 0.6
@@ -49,6 +48,7 @@ model = dg.load_model(
 )
 
 class RTSPBuffer:
+    """Background thread to continuously read RTSP frames into a buffer."""
     def __init__(self, src_url, buf_size=60, retry_delay=5):
         self.src_url     = src_url
         self.retry_delay = retry_delay
@@ -65,7 +65,7 @@ class RTSPBuffer:
                     cap.release()
                 print(f"[WARN] Can't open stream—retry in {self.retry_delay}s")
                 time.sleep(self.retry_delay)
-                cap = cv2.VideoCapture(self.src_url, CAPTURE_OPTS)
+                cap = cv2.VideoCapture(self.src_url)
                 continue
 
             ret, frame = cap.read()
@@ -81,6 +81,7 @@ class RTSPBuffer:
             cap.release()
 
     def read(self):
+        """Return the most recent frame or None if buffer is empty."""
         return self.buf[-1] if self.buf else None
 
     def stop(self):
@@ -97,13 +98,14 @@ def monitor_rtsp():
         while True:
             frame = buffer.read()
             if frame is None:
+                time.sleep(0.01)
                 continue
 
-                        # Run inference on the numpy frame directly
+            # Run inference on the current frame batch
             detections = list(model.predict_batch([frame]))[0]
-            display.show(detections)
+            disp.show(detections)
 
-            # Iterate through actual detection objects
+            # Process detected objects
             for det in detections:
                 label = getattr(det, 'label', None)
                 score = getattr(det, 'score', None)
@@ -114,12 +116,14 @@ def monitor_rtsp():
 
                 now = time.time()
                 if now - last_ts < COOLDOWN_SECONDS:
-                    break  # skip further detections until cooldown
+                    break  # enforce cooldown between captures
 
-                print("[DETECTED BIRD] label=bird score=", score)
+                print(f"[DETECTED BIRD] score={score:.2f}")
                 ts    = datetime.now().strftime("%Y%m%d_%H%M%S")
                 fname = f"bird_{ts}.jpg"
                 path  = os.path.join(CAPTURE_DIR, fname)
+
+                # Save captured frame
                 cv2.imwrite(path, frame)
                 add_visit(
                     filename=fname,
@@ -131,7 +135,7 @@ def monitor_rtsp():
                 )
                 print(f"[CAPTURED] {fname}")
                 last_ts = now
-                break  # only capture once per frame
+                break  # only one capture per frame
 
 if __name__ == "__main__":
     try:
