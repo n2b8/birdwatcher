@@ -71,11 +71,11 @@ def monitor():
             if capture_frame(VIDEO_SOURCE, filepath):
                 print(f"[CAPTURED] {filename} @ {det['score']*100:.1f}%")
                 add_visit(
-                    filename=filename,
-                    timestamp=timestamp,
-                    species=None,             # you can fill this in later
-                    confidence=det["score"],
-                    motion_score=None,        # not used here
+                    filename,
+                    timestamp,
+                    None,             # you can fill this in later
+                    None,
+                    None,        # not used here
                     status="review"
                 )
                 last_time = now
