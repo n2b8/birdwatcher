@@ -36,14 +36,26 @@ model = dg.load_model(
     output_class_set=OUTPUT_CLASS_SET
 )
 
-def capture_frame(rtsp_url, path):
-    cap = cv2.VideoCapture(rtsp_url)
+def capture_frame(rtsp_url, path, buffer_frames=30):
+    cap = cv2.VideoCapture(rtsp_url, cv2.CAP_FFMPEG)
     if not cap.isOpened():
+        print("[ERROR] Unable to open RTSP stream.")
         return False
-    ret, frame = cap.read()
+
+    frame = None
+    for _ in range(buffer_frames):
+        ret, tmp = cap.read()
+        if ret and tmp is not None:
+            frame = tmp
+        else:
+            continue
+
     cap.release()
-    if not ret or frame is None:
+
+    if frame is None:
+        print("[ERROR] Unable to capture a valid frame.")
         return False
+
     cv2.imwrite(path, frame)
     return True
 
