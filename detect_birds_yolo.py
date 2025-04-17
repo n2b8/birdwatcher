@@ -37,13 +37,13 @@ def monitor_rtsp():
     print("[INFO] Starting RTSP stream inference (no window)...")
     last_ts = 0.0
 
-    # predict_stream yields a DetectionResult (with .objects) for each frame
     for result in degirum_tools.predict_stream(model, VIDEO_SOURCE):
-        # pull out detections and raw frame
-        detections = getattr(result, "objects", result)
-        frame = getattr(result, "frame", None)
+        # result.frame is the cv2 image, result.objects is a list of detections
+        frame = result.frame
+        detections = result.objects  # <- this is a Python list
+
         if frame is None:
-            # fallback to manual grab if needed
+            # fallback grab
             cap = cv2.VideoCapture(VIDEO_SOURCE)
             ret, frame = cap.read()
             cap.release()
@@ -51,6 +51,7 @@ def monitor_rtsp():
                 continue
 
         for det in detections:
+            # det.label, det.score, det.bbox, etc.
             if det.label != "bird" or det.score is None:
                 continue
             if det.score < CONFIDENCE_THRESHOLD:
@@ -64,7 +65,6 @@ def monitor_rtsp():
             fname = f"bird_{ts}.jpg"
             path = os.path.join(CAPTURE_DIR, fname)
 
-            # Save image and record visit
             cv2.imwrite(path, frame)
             add_visit(
                 filename=fname,
@@ -78,6 +78,7 @@ def monitor_rtsp():
 
             last_ts = now
             break  # one capture per frame
+
 
 if __name__ == "__main__":
     try:
