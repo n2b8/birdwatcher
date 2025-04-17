@@ -14,13 +14,14 @@ from db import (
 )
 
 app = Flask(__name__)
+LABEL_MAP_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "ai", "model", "label_map.csv")
 THUMBNAIL_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "thumbnails")
 IMAGE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "images")
 os.makedirs(IMAGE_DIR, exist_ok=True)
 
 # Load species label mapping from CSV
 SPECIES_LOOKUP = {}
-with open("model/label_map.csv", newline="", encoding="utf-8") as f:
+with open(LABEL_MAP_PATH, newline="", encoding="utf-8") as f:
     reader = csv.DictReader(f)
     for row in reader:
         species_id = row["ID"].strip()
