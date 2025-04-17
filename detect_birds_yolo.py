@@ -73,7 +73,8 @@ def monitor():
                 add_visit(
                     filename=filename,
                     timestamp=timestamp,
-                    species=None,             # you can fill this in later
+                    species=None,
+                    confidence=det["score"],
                     status="review",
                     classified=False
                 )
