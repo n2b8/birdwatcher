@@ -35,7 +35,7 @@ COOLDOWN_SECONDS     = 10
 inference_host_address = "@local"
 zoo_url                = "degirum/hailo"
 token                  = ''
-model_name             = "yolov8n_relu6_coco--640x640_quant_hailort_hailo8l_1"
+model_name             = "yolov8n_relu6_coco--640x640_quant_hailort_hailo8_1"
 output_class_set       = {"bird"}
 
 # Load the AI model
