@@ -57,7 +57,10 @@ def index():
     per_page = 10
     offset = (page - 1) * per_page
 
+    today = datetime.now().date()
+
     with get_connection() as conn:
+        # Main gallery entries
         cursor = conn.execute("""
             SELECT * FROM visits
             WHERE status = 'accepted'
@@ -69,6 +72,7 @@ def index():
         for row in rows:
             row["species"] = format_species_name(row["species"])
 
+        # Total visit count
         cursor = conn.execute("""
             SELECT COUNT(*) FROM visits
             WHERE status = 'accepted'
@@ -76,10 +80,58 @@ def index():
         """)
         total_count = cursor.fetchone()[0]
 
+        # Today's visit count
+        cursor = conn.execute("""
+            SELECT COUNT(*) FROM visits
+            WHERE status = 'accepted'
+              AND DATE(timestamp) = ?
+              AND LOWER(species) != 'not_a_bird'
+        """, (today,))
+        todays_count = cursor.fetchone()[0]
+
+        # Most recent visit today
+        cursor = conn.execute("""
+            SELECT * FROM visits
+            WHERE status = 'accepted'
+              AND DATE(timestamp) = ?
+              AND LOWER(species) != 'not_a_bird'
+            ORDER BY timestamp DESC
+            LIMIT 1
+        """, (today,))
+        recent_row = cursor.fetchone()
+        most_recent = dict(zip([col[0] for col in cursor.description], recent_row)) if recent_row else None
+        if most_recent:
+            most_recent["species"] = format_species_name(most_recent["species"])
+
+        # Most frequent species today
+        cursor = conn.execute("""
+            SELECT species, COUNT(*) as count
+            FROM visits
+            WHERE status = 'accepted'
+              AND DATE(timestamp) = ?
+              AND LOWER(species) != 'not_a_bird'
+            GROUP BY species
+            ORDER BY count DESC
+            LIMIT 1
+        """, (today,))
+        freq_row = cursor.fetchone()
+        most_frequent_species = format_species_name(freq_row[0]) if freq_row else None
+
     has_next = (offset + per_page) < total_count
     has_prev = page > 1
 
-    return render_template("index.html", entries=rows, page=page, has_next=has_next, has_prev=has_prev)
+    return render_template(
+        "index.html",
+        entries=rows,
+        page=page,
+        has_next=has_next,
+        has_prev=has_prev,
+        date=today.strftime("%A, %B %d"),
+        todays_count=todays_count,
+        most_recent=most_recent,
+        most_frequent_species=most_frequent_species,
+        weather=None  # Placeholder for API integration later
+    )
 
 @app.route("/review")
 def review():

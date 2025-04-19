@@ -2,6 +2,54 @@
 {% block title %}Bird Feeder Log{% endblock %}
 
 {% block content %}
+<!-- Summary Section -->
+<div class="bg-white rounded-lg shadow-md p-4 mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm sm:text-base">
+  <!-- Date -->
+  <div class="flex items-center space-x-3">
+    <div class="text-3xl">📅</div>
+    <div>
+      <p class="text-gray-600 text-xs uppercase">Today</p>
+      <p class="font-semibold">{{ date }}</p>
+    </div>
+  </div>
+
+  <!-- Weather (placeholder) -->
+  <div class="flex items-center space-x-3">
+    <div class="text-3xl">⛅</div>
+    <div>
+      <p class="text-gray-600 text-xs uppercase">Weather</p>
+      <p class="font-semibold">{{ weather or "Loading..." }}</p>
+    </div>
+  </div>
+
+  <!-- Most Recent Visit -->
+  <div class="flex items-center space-x-3">
+    <div class="text-3xl">🕒</div>
+    <div>
+      <p class="text-gray-600 text-xs uppercase">Most Recent</p>
+      {% if most_recent %}
+        <p class="font-semibold">{{ most_recent.species }}</p>
+        <p class="text-xs text-gray-500">{{ most_recent.timestamp }}</p>
+      {% else %}
+        <p class="text-gray-500 italic">No visits yet today</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Today's Visit Count -->
+  <div class="flex items-center space-x-3">
+    <div class="text-3xl">🔢</div>
+    <div>
+      <p class="text-gray-600 text-xs uppercase">Today’s Visits</p>
+      <p class="font-semibold">{{ todays_count }}</p>
+      {% if most_frequent_species %}
+        <p class="text-xs text-gray-500">Top: {{ most_frequent_species }}</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Gallery Section -->
 <h2 class="text-xl font-semibold mb-4">Accepted Visits</h2>
 
 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
