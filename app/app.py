@@ -6,6 +6,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import re
+import requests
 from db import (
     get_connection,
     update_status,
@@ -50,6 +51,40 @@ def format_species_name(raw_name):
             return f"{name} ({subtitle})" if subtitle else name
 
     return raw_name  # fallback if no match
+
+def fetch_current_weather(lat=39.7392, lon=-104.9903, timezone="auto"):  # Default: Denver, CO
+    try:
+        url = "https://api.open-meteo.com/v1/gfs"
+        params = {
+            "latitude": lat,
+            "longitude": lon,
+            "hourly": "temperature_2m,cloud_cover,precipitation_probability",
+            "current": "temperature_2m,cloud_cover,precipitation_probability",
+            "temperature_unit": "fahrenheit",
+            "precipitation_unit": "inch",
+            "timezone": timezone,
+        }
+        resp = requests.get(url, params=params, timeout=5)
+        resp.raise_for_status()
+        data = resp.json()
+        # Fallback to first hourly forecast if 'current' isn't available
+        hour_index = 0
+        temp = data["hourly"]["temperature_2m"][hour_index]
+        cloud = data["hourly"]["cloud_cover"][hour_index]
+        precip = data["hourly"]["precipitation_probability"][hour_index]
+
+        icon = "☀️"
+        if cloud > 80:
+            icon = "☁️"
+        elif cloud > 40:
+            icon = "⛅"
+        if precip > 60:
+            icon = "🌧️"
+
+        return f"{icon} {round(temp)}°F"
+    except Exception as e:
+        print(f"[WARN] Weather fetch failed: {e}")
+        return "Weather unavailable"
 
 @app.route("/")
 def index():
@@ -130,7 +165,7 @@ def index():
         todays_count=todays_count,
         most_recent=most_recent,
         most_frequent_species=most_frequent_species,
-        weather=None  # Placeholder for API integration later
+        weather=fetch_current_weather()
     )
 
 @app.route("/review")
