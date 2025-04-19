@@ -34,7 +34,7 @@ def classify_image(filename):
 
     print(f"[CLASSIFY] Processing {filename}")
     result = subprocess.run([
-        "python3", "classify_bird.py",
+        "python3", "/home/jake/birdwatcher/ai/classify_bird.py",
         path,
         filename
     ])
