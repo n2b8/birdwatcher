@@ -18,8 +18,8 @@ print("TELEGRAM_CHAT_ID:", os.getenv("TELEGRAM_CHAT_ID"))
 CONFIDENCE_THRESHOLD = 0.65
 REVIEW_THRESHOLD = 0.1
 IMAGE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "images")
-MODEL_PATH = "model/efficientnet_b7_backyard-birds.onnx"
-LABELS_PATH = "model/class_labels.txt"
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "model", "efficientnet_b7_backyard-birds.onnx")
+LABELS_PATH = os.path.join(os.path.dirname(__file__), "model", "class_labels.txt")
 
 # Telegram settings
 TELEGRAM_API_KEY = os.getenv("TELEGRAM_BOT_TOKEN")
