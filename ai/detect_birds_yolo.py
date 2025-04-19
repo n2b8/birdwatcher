@@ -16,7 +16,7 @@ rtsp_port = os.environ.get("RTSP_PORT", "554")
 rtsp_path = os.environ["RTSP_PATH"]
 
 # —— CONFIG —— #
-VIDEO_SOURCE = f"rtsp://{rtsp_user}:{rtsp_pass}@{rtsp_host}:{rtsp_port}/{rtsp_path}"
+VIDEO_SOURCE = f"rtsp://{rtsp_user}:{rtsp_pass}@{rtsp_host}:{rtsp_port}/{rtsp_path}?tcp"
 CONFIDENCE_THRESHOLD = 0.6
 COOLDOWN_SECONDS     = 10
 CAPTURE_DIR          = "images"
