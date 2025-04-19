@@ -208,31 +208,6 @@ def delete(filename):
         return redirect(url_for("review"))
     return redirect(url_for("index"))
 
-@app.route("/snap")
-def snap():
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    filename = f"visit_{timestamp}.jpg"
-    temp_path = os.path.join("/tmp", filename)
-    final_path = os.path.join(IMAGE_DIR, filename)
-
-    result = os.system(f"libcamera-still -n --width 640 --height 480 -o {temp_path}")
-    if result != 0 or not os.path.exists(temp_path):
-        return "❌ Failed to capture image", 500
-
-    os.rename(temp_path, final_path)
-
-    # Save to DB
-    add_visit(
-        filename=filename,
-        timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        species="Manual Snapshot",
-        confidence=None,
-        motion_score=None,
-        status="accepted"
-    )
-
-    return redirect(url_for("index"))
-
 @app.route("/edit/<filename>", methods=["GET", "POST"])
 def edit_species(filename):
     if request.method == "POST":
